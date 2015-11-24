@@ -62,15 +62,11 @@ class mRoute(object):
         return "Route "+self.destination
 
 class mLogicalInterface(object):
-    def __init__(self,tree):
-        self.name = tree.find('name').text
-        self.description = tree.find('description').text
-        self.speed = tree.getparent().find('speed').text
-        try:
-            output = tree.find('transit-traffic-statistics').find('output-bps').text
-        except AttributeError:
-            output = tree.find('lag-traffic-statistics').find('lag-bundle').find('output-bps').text
-        self.output = int(output)/1000**2
+    def __init__(self,name,description,speed,output):
+        self.name = name
+        self.description = description
+        self.speed = speed
+        self.output = output
     def __repr__(self):
         return "LogicalInterface "+self.name
 
@@ -78,16 +74,16 @@ def findAllLSP(router):
     mpls = router.execute('show configuration protocol mpls')
     lTree = mpls.find('configuration').find('protocols').find('mpls').findall('label-switched-path')
     lsps = []
-    for lsp in lTree:
-        name = lsp.find('name').text
-        to = lsp.find('to').text
+    for tree in lTree:
+        name = tree.find('name').text
+        to = tree.find('to').text
         try:
-            band = lsp.find('bandwidth').find('per-traffic-class-bandwidth').text
+            band = tree.find('bandwidth').find('per-traffic-class-bandwidth').text
             band = __SetSameBandwidth__(band)
         except AttributeError:
             band = 0
         bandwidth = band
-        path = lsp.find('primary').find('name').text
+        path = tree.find('primary').find('name').text
         lsps.append(mLSP(name,to,bandwidth,path))
     return lsps
 
@@ -107,9 +103,9 @@ def findAllPath(router):
     mpls = router.execute('show configuration protocol mpls')
     pTree = mpls.find('configuration').find('protocols').find('mpls').findall('path')
     paths = []
-    for path in pTree:
-        name = path.find('name').text
-        hops = path.findall('path-list')
+    for tree in pTree:
+        name = tree.find('name').text
+        hops = tree.findall('path-list')
         route = []
         for hop in hops:
             route.append(hop.find('name').text)
@@ -140,9 +136,17 @@ def findAllLogicalInterfaces(router):
     iTree = interfaces.find('interface-information').findall('physical-interface')
     lints = []
     for interface in iTree:
-        for lint in interface.findall('logical-interface'):
+        for tree in interface.findall('logical-interface'):
             try:
-                lints.append(mLogicalInterface(lint))
+                name = tree.find('name').text
+                description = tree.find('description').text
+                speed = tree.getparent().find('speed').text
+                try:
+                    output = tree.find('transit-traffic-statistics').find('output-bps').text
+                except AttributeError:
+                    output = tree.find('lag-traffic-statistics').find('lag-bundle').find('output-bps').text
+                output = int(output)/1000**2
+                lints.append(mLogicalInterface(name,description,speed,output))
             except AttributeError:
                 pass
     return lints
@@ -151,9 +155,9 @@ def getLSPState(route):
     showlsp = router.execute('show mpls lsp unidirectional ingress')
     sTree = showlsp.find('mpls-lsp-information').find('rsvp-session-data').findall('rsvp-session')
     slist = {}
-    for l in sTree:
-        state = l.find('mpls-lsp').find('lsp-state').text
-        name = l.find('mpls-lsp').find('name').text
+    for tree in sTree:
+        state = tree.find('mpls-lsp').find('lsp-state').text
+        name = tree.find('mpls-lsp').find('name').text
         slist[name] = state
     return slist
 
