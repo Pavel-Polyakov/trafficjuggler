@@ -151,7 +151,7 @@ def findAllLogicalInterfaces(router):
                 pass
     return lints
 
-def getLSPState(route):
+def getLSPState(router):
     showlsp = router.execute('show mpls lsp unidirectional ingress')
     sTree = showlsp.find('mpls-lsp-information').find('rsvp-session-data').findall('rsvp-session')
     slist = {}
