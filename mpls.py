@@ -44,7 +44,10 @@ class mLSP(object):
         self.output = output
     def printLSP(self):
         lspout = '{state:<14s}{name:<37s}{bandwidth:>11s}{output:>14s}  {rbandwidth:<12s}{route:<10s}'
-        rbandwidth = round(float(self.output)/self.bandwidth,1)
+        try:
+            rbandwidth = round(float(self.output)/self.bandwidth,1)
+        except Exception:
+            rbandiwdth = None
         print lspout.format(name = self.name,
                             state = self.state,
                             bandwidth = str(self.bandwidth)+'m',
@@ -201,7 +204,11 @@ def __SetSameBandwidth__(band):
         re.sub('m','',band)
         band = float(band)/1000
     band = re.sub('m','',band)
-    return int(band)
+    try:
+        band = int(band)
+    except:
+        band = 0
+    return band
 
 def collectAndSort(router,zabbixaccount):
     lsps = findAllLSP(router)
@@ -224,7 +231,10 @@ def collectAndSort(router,zabbixaccount):
         l.nh = lint
         l.output = output
         l.state = state
-        l.rbandwidth = round(float(output)/l.bandwidth,1)
+        try:
+            l.rbandwidth = round(float(output)/l.bandwidth,1)
+        except Exception:
+            l.rbandwidth = 0
         if not lint in interfaces:
             lint.bandwidth = l.bandwidth
             lint.rsvpout = int(l.output)
