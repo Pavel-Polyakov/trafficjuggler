@@ -42,17 +42,18 @@ class mLSP(object):
         self.path = path
         self.state = state
         self.output = output
+        self.rbandwidth = 0
     def printLSP(self):
         lspout = '{state:<14s}{name:<37s}{bandwidth:>11s}{output:>14s}  {rbandwidth:<12s}{route:<10s}'
         try:
-            rbandwidth = round(float(self.output)/self.bandwidth,1)
+            self.rbandwidth = round(float(self.output)/self.bandwidth,1)
         except Exception:
-            rbandiwdth = None
+            pass
         print lspout.format(name = self.name,
                             state = self.state,
                             bandwidth = str(self.bandwidth)+'m',
                             output = str(self.output),
-                            rbandwidth = str(rbandwidth)+'m',
+                            rbandwidth = str(self.rbandwidth)+'m',
                             route = self.path.formattedRoute())
     def __repr__(self):
         return "LSP "+self.name
