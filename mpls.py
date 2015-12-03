@@ -45,16 +45,22 @@ class mLSP(object):
         self.rbandwidth = 0
     def printLSP(self):
         lspout = '{state:<14s}{name:<37s}{bandwidth:>11s}{output:>14s}  {rbandwidth:<12s}{route:<10s}'
-        try:
-            self.rbandwidth = round(float(self.output)/self.bandwidth,1)
-        except Exception:
-            pass
+        self.__checkLSP__()
         print lspout.format(name = self.name,
                             state = self.state,
                             bandwidth = str(self.bandwidth)+'m',
                             output = str(self.output),
-                            rbandwidth = str(self.rbandwidth)+'m',
+                            rbandwidth = str(self.rbandwidth),
                             route = self.path.formattedRoute())
+    def __checkLSP__(self):
+        if (self.state == "Up" and str(self.output) == "0"):
+            self.output = "Zabbix Fail"
+            self.rbandwidth = "None"
+        elif (self.state == "Up"):
+            self.rbandwidth = str(self.rbandwidth)+"m"
+        if (self.state == "Inactive"):
+            self.output = "None"
+            self.rbandwidth = "None"
     def __repr__(self):
         return "LSP "+self.name
 
@@ -246,7 +252,7 @@ def collectAndSort(router,zabbixaccount):
             interfaces[interfaces.index(lint)].bandwidth += l.bandwidth
             interfaces[interfaces.index(lint)].rsvpout += int(l.output)
             interfaces[interfaces.index(lint)].lsplist.append(l)
-
+    
     hosts = []
     for l in lsps:
         to = l.to
@@ -265,7 +271,7 @@ def collectAndSort(router,zabbixaccount):
         except Exception:
             interface.rsvppercent = 0
             interface.ldpout = 0
-    return interfaces,lsps
+    return interfaces,lsps,hosts
 
 def printInterfaces(interfaces):
     #and print it
@@ -287,6 +293,6 @@ if __name__ == "__main__":
     router = mRouter(host)
     print "Please enter zabbix logo/pass: "
     zabbixaccount = read_login()
-    interfaces,lsps = collectAndSort(router,zabbixaccount)
+    interfaces,lsps,hosts = collectAndSort(router,zabbixaccount)
     printInterfaces(interfaces)
     router.close()
