@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import re
 import time
+import os
 from Exscript.util.interact import read_login
 from Exscript.protocols import SSH2
 from lxml import etree
@@ -34,14 +35,34 @@ class mRouter(object):
             sys.exit()
 
 class mLSP(object):
-    def __init__(self,name,to,bandwidth,path):
+    def __init__(self,name,to,bandwidth,path,state = 'None', output = 'None', nh = 'None'):
         self.name = name
         self.to = to
         self.bandwidth = bandwidth
         self.path = path
+        self.state = state
+        self.output = output
+        self.rbandwidth = 0
+    def printLSP(self):
+        lspout = '{state:<14s}{name:<37s}{bandwidth:>11s}{output:>14s}  {rbandwidth:<12s}{route:<10s}'
+        self.__checkLSP__()
+        print lspout.format(name = self.name,
+                            state = self.state,
+                            bandwidth = str(self.bandwidth)+'m',
+                            output = str(self.output),
+                            rbandwidth = str(self.rbandwidth),
+                            route = self.path.formattedRoute())
+    def __checkLSP__(self):
+        if (self.state == "Up" and str(self.output) == "0"):
+            self.output = "Zabbix Fail"
+            self.rbandwidth = "None"
+        elif (self.state == "Up"):
+            self.rbandwidth = str(self.rbandwidth)+"m"
+        if (self.state == "Inactive"):
+            self.output = "None"
+            self.rbandwidth = "None"
     def __repr__(self):
         return "LSP "+self.name
-
 
 class mPath(object):
     def __init__(self,name,route):
@@ -62,104 +83,110 @@ class mRoute(object):
         return "Route "+self.destination
 
 class mLogicalInterface(object):
-    def __init__(self,tree):
-        self.name = tree.find('name').text
-        self.description = tree.find('description').text
-        self.speed = tree.getparent().find('speed').text
-        try:
-            output = tree.find('transit-traffic-statistics').find('output-bps').text
-        except AttributeError:
-            output = tree.find('lag-traffic-statistics').find('lag-bundle').find('output-bps').text
-        self.output = int(output)/1000**2
+    def __init__(self,name,description,speed,output):
+        self.name = name
+        self.description = description
+        self.speed = speed
+        self.output = output
     def __repr__(self):
         return "LogicalInterface "+self.name
 
+class mHost(object):
+    def __init__(self,name,lsplist,output):
+        self.name = name
+        self.lsplist = lsplist
+        self.output = output
+    def __repr__(self):
+        return "Host "+self.name
+
 def findAllLSP(router):
-    mpls = router.execute('show configuration protocol mpls')
-    lTree = mpls.find('configuration').find('protocols').find('mpls').findall('label-switched-path')
+    command = router.execute('show configuration protocol mpls')
+    rootTree = command.xpath('//configuration/protocols/mpls/label-switched-path')
     lsps = []
-    for lsp in lTree:
-        name = lsp.find('name').text
-        to = lsp.find('to').text
+    for tree in rootTree:
+        name = tree.xpath('string(name/text())')
+        to = tree.xpath('string(to/text())')
         try:
-            band = lsp.find('bandwidth').find('per-traffic-class-bandwidth').text
+            band = tree.xpath('string(bandwidth/per-traffic-class-bandwidth/text())')
             band = __SetSameBandwidth__(band)
         except AttributeError:
             band = 0
         bandwidth = band
-        path = lsp.find('primary').find('name').text
-        lsps.append(mLSP(name,to,bandwidth,path))
+        path = tree.xpath('primary/name')[0].text
+        lsps.append(mLSP(name = name,to = to,bandwidth = bandwidth,path = path))
     return lsps
 
-def __SetSameBandwidth__(band):
-    if re.match('m|g', band):
-        band = re.sub('m','000',band)
-        band = re.sub('g','000000',band)
-    band = re.sub('000000$','m',band)
-    band = re.sub('g$','000m',band)
-    if re.match('m', band):
-        re.sub('m','',band)
-        band = float(band)/1000
-    band = re.sub('m','',band)
-    return int(band)
 
 def findAllPath(router):
-    mpls = router.execute('show configuration protocol mpls')
-    pTree = mpls.find('configuration').find('protocols').find('mpls').findall('path')
-    paths = []
-    for path in pTree:
-        name = path.find('name').text
-        hops = path.findall('path-list')
+    result = []
+    command = router.execute('show configuration protocol mpls')
+    rootTree = command.xpath('//configuration/protocols/mpls/path')
+    for tree in rootTree:
+        name = tree.xpath('string(name/text())')
+        hops = tree.xpath('path-list')
         route = []
         for hop in hops:
-            route.append(hop.find('name').text)
-        paths.append(mPath(name,route))
-    return paths
+            route.append(hop.xpath('string(name/text())'))
+        result.append(mPath(name,route))
+    return result
 
 def findAllRoutes(router):
-    routes = []
-    interfaces = router.execute('show configuration interfaces').find('configuration').find('interfaces').findall('interface')
-    for interface in interfaces:
+    result = []
+    command = router.execute('show configuration interfaces')
+    rootTree = command.xpath('//configuration/interfaces/interface')
+    for interface in rootTree:
         try:
-            interfacename = interface.find('name').text
-            units = interface.findall('unit')
+            interfacename = interface.xpath('string(name/text())')
+            units = interface.xpath('unit')
             for unit in units:
                 destination = ''
-                unitname = unit.find('name').text
+                unitname = unit.xpath('string(name/text())')
                 try:
-                    destination = unit.find('family').find('inet').find('address').find('name').text
+                    destination = unit.xpath('string(family/inet/address/name/text())')
                 except Exception: pass
                 if destination != '':
                     finalname = interfacename+'.'+unitname
-                    routes.append(mRoute(destination,finalname))
+                    result.append(mRoute(destination,finalname))
         except Exception: pass
-    return routes
+    return result
 
 def findAllLogicalInterfaces(router):
-    interfaces = router.execute('show interfaces detail')
-    iTree = interfaces.find('interface-information').findall('physical-interface')
-    lints = []
-    for interface in iTree:
-        for lint in interface.findall('logical-interface'):
+    result = []
+    command = router.execute('show interfaces detail')
+    rootTree = command.xpath('//interface-information/physical-interface')
+    for interface in rootTree:
+        for tree in interface.xpath('logical-interface'):
             try:
-                lints.append(mLogicalInterface(lint))
+                name = tree.xpath('string(name/text())')
+                description = tree.xpath('string(description/text())')
+                speed = tree.getparent().xpath('string(speed/text())')
+                if re.match('ae',name):
+                    output = tree.xpath('string(lag-traffic-statistics/lag-bundle/output-bps/text())')
+                else:
+                    output = tree.xpath('string(transit-traffic-statistics/output-bps/text())')
+                try:
+                    output = int(output)/1000**2
+                except ValueError:
+                    output = 0
+                result.append(mLogicalInterface(name,description,speed,output))
             except AttributeError:
                 pass
-    return lints
+    return result
 
-def getLSPState(route):
-    showlsp = router.execute('show mpls lsp unidirectional ingress')
-    sTree = showlsp.find('mpls-lsp-information').find('rsvp-session-data').findall('rsvp-session')
-    slist = {}
-    for l in sTree:
-        state = l.find('mpls-lsp').find('lsp-state').text
-        name = l.find('mpls-lsp').find('name').text
-        slist[name] = state
-    return slist
+def getLSPState(router):
+    result = {}
+    command = router.execute('show mpls lsp unidirectional ingress')
+    rootTree = command.xpath('//mpls-lsp-information/rsvp-session-data/rsvp-session')
+    for tree in rootTree:
+        state = tree.xpath('string(mpls-lsp/lsp-state/text())')
+        name = tree.xpath('string(mpls-lsp/name/text())')
+        result[name] = state
+    return result
 
-def getLspOutput(host, account):
-    zapi = ZabbixAPI(url='http://ihome.ru/zabbix', user=account.name, password=account.password)
-    lspsoutput = {}
+def getLspOutput(router, account):
+    result = {}
+    host = router.name
+    zapi = ZabbixAPI(url='http://zabbix.ihome.ru', user=account.name, password=account.password)
     hostid = ''
     for h in zapi.host.getobjects():
         if h['name'] == host:
@@ -171,73 +198,101 @@ def getLspOutput(host, account):
                 output = 0
             else:
                 output = int(item['lastvalue'])/1000**2
-            lspsoutput[key] = output
-    return lspsoutput
+            result[key] = output
+    return result
 
-host = raw_input('Please enter host: ')
-router = mRouter(host)
-print "Please enter zabbix logo/pass: "
-zabbixaccount = read_login()
-#grab information
-lsps = findAllLSP(router)
-paths = findAllPath(router)
-routes = findAllRoutes(router)
-lints = findAllLogicalInterfaces(router)
-lspOutput = getLspOutput(router.name, zabbixaccount)
-lspState = getLSPState(router)
-
-#group information
-interfaces = []
-for l in lsps:
-    path = next(x for x in paths if x.name == l.name)
-    route = next(x for x in routes if IPAddress(path.route[0]) in IPNetwork(x.destination))
-    lint = next(x for x in lints if x.name == route.via)
-    try: state = lspState[l.name]
-    except KeyError: state = 'Inactive'
-    try: output = lspOutput[l.name]
-    except KeyError: output = 0
-    l.path = path
-    l.nh = lint
-    l.output = output
-    l.state = state
-    l.rbandwidth = round(float(output)/l.bandwidth,1)
-    if not lint in interfaces:
-        lint.bandwidth = l.bandwidth
-        lint.rsvpout = int(l.output)
-        lint.lsplist = []
-        lint.lsplist.append(l)
-        interfaces.append(lint)
-    else:
-        interfaces[interfaces.index(lint)].bandwidth += l.bandwidth
-        interfaces[interfaces.index(lint)].rsvpout += int(l.output)
-        interfaces[interfaces.index(lint)].lsplist.append(l)
-
-for interface in interfaces:
+def __SetSameBandwidth__(band):
+    if re.match('m|g', band):
+        band = re.sub('m','000',band)
+        band = re.sub('g','000000',band)
+    band = re.sub('000000$','m',band)
+    band = re.sub('g$','000m',band)
+    if re.match('m', band):
+        re.sub('m','',band)
+        band = float(band)/1000
+    band = re.sub('m','',band)
     try:
-        interface.rsvppercent = round((float(interface.rsvpout)/interface.output)*100,2)
-        interface.ldpout = interface.output - interface.rsvpout
-    except Exception:
-        interface.rsvppercent = 0
-        interface.ldpout = 0
+        band = int(band)
+    except:
+        band = 0
+    return band
 
-#and print it
-intout = '{name:<14s}{description:<37s}{bandwidth:>11s}{output:>14s}  {rsvpout:<12s}{ldpout:<17s}'
-lspout = '{state:<14s}{name:<37s}{bandwidth:>11s}{output:>14s}  {rbandwidth:<12s}{route:<10s}'
+def collectAndSort(router,zabbixaccount):
+    lsps = findAllLSP(router)
+    paths = findAllPath(router)
+    routes = findAllRoutes(router)
+    lints = findAllLogicalInterfaces(router)
+    lspOutput = getLspOutput(router, zabbixaccount)
+    lspState = getLSPState(router)
+    
+    interfaces = []
+    for l in lsps:
+        path = next(x for x in paths if x.name == l.name)
+        route = next(x for x in routes if IPAddress(path.route[0]) in IPNetwork(x.destination))
+        lint = next(x for x in lints if x.name == route.via)
+        try: state = lspState[l.name]
+        except KeyError: state = 'Inactive'
+        try: output = lspOutput[l.name]
+        except KeyError: output = 0
+        l.path = path
+        l.nh = lint
+        l.output = output
+        l.state = state
+        try:
+            l.rbandwidth = round(float(output)/l.bandwidth,1)
+        except Exception:
+            l.rbandwidth = 0
+        if not lint in interfaces:
+            lint.bandwidth = l.bandwidth
+            lint.rsvpout = int(l.output)
+            lint.lsplist = []
+            lint.lsplist.append(l)
+            interfaces.append(lint)
+        else:
+            interfaces[interfaces.index(lint)].bandwidth += l.bandwidth
+            interfaces[interfaces.index(lint)].rsvpout += int(l.output)
+            interfaces[interfaces.index(lint)].lsplist.append(l)
+    
+    hosts = []
+    for l in lsps:
+        to = l.to
+        if not to in [x.name for x in hosts]:
+            lsplist = [x for x in lsps if x.to == to]
+            output = sum([x.output for x in lsplist])
+            host = mHost(to,lsplist,output)
+            hosts.append(host)
+        else:
+            pass
 
-for interface in sorted(interfaces, key = lambda interface: interface.output, reverse=True):
-    print intout.format(name = interface.name,
-                        description = '* '+interface.description,
-                        bandwidth = '* '+re.sub('Gbps','000',interface.speed),
-                        output = '* '+str(interface.output),
-                        rsvpout = 'RSVP:'+str(interface.rsvpout),
-                        ldpout = 'LDP:'+str(interface.ldpout))
-    for lsp in sorted(interface.lsplist, key = lambda lsp: lsp.bandwidth, reverse = True):
-        print lspout.format(name = lsp.name,
-                            state = lsp.state,
-                            bandwidth = str(lsp.bandwidth)+'m',
-                            output = str(lsp.output),
-                            rbandwidth = str(lsp.rbandwidth)+'m',
-                            route = lsp.path.formattedRoute())
-    print
+    for interface in interfaces:
+        try:
+            interface.rsvppercent = round((float(interface.rsvpout)/interface.output)*100,2)
+            interface.ldpout = interface.output - interface.rsvpout
+        except Exception:
+            interface.rsvppercent = 0
+            interface.ldpout = 0
+    return interfaces,lsps,hosts
 
-router.close()
+def printInterfaces(interfaces):
+    #and print it
+    intout = '{name:<14s}{description:<37s}{bandwidth:>11s}{output:>14s}  {rsvpout:<12s}{ldpout:<17s}'
+
+    for interface in sorted(interfaces, key = lambda interface: interface.output, reverse=True):
+        print intout.format(name = interface.name,
+                            description = '* '+interface.description,
+                            bandwidth = '* '+re.sub('Gbps','000',interface.speed),
+                            output = '* '+str(interface.output),
+                            rsvpout = 'RSVP:'+str(interface.rsvpout),
+                            ldpout = 'LDP:'+str(interface.ldpout))
+        for lsp in sorted(interface.lsplist, key = lambda lsp: lsp.bandwidth, reverse = True):
+            lsp.printLSP()
+        print
+
+if __name__ == "__main__":
+    host = raw_input('Please enter host: ')
+    router = mRouter(host)
+    print "Please enter zabbix logo/pass: "
+    zabbixaccount = read_login()
+    interfaces,lsps,hosts = collectAndSort(router,zabbixaccount)
+    printInterfaces(interfaces)
+    router.close()
