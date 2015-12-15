@@ -11,6 +11,7 @@ from zabbix.api import ZabbixAPI
 class mRouter(object):
     def __init__(self,host):
         self.__create__(host)
+
     def execute(self,command):
         self.conn.execute('%s | display xml | no-more' % command)
         output = self.conn.response
@@ -18,10 +19,12 @@ class mRouter(object):
         rpc = re.sub('xmlns="','xmlns:junos="',rpc)
         tree = etree.fromstring(rpc)
         return tree
+
     def close(self):
         self.conn.send('exit\r')
         self.conn.send('exit\r')
         self.conn.close()
+
     def __create__(self,host):
         account = read_login()
         self.name = host
@@ -33,6 +36,7 @@ class mRouter(object):
         else:
             print 'Does not connected. Please check your input'
             sys.exit()
+
 
 class mLSP(object):
     def __init__(self,name,to,bandwidth,path,state,output,nexthop_interface,rbandwidth):
@@ -61,6 +65,7 @@ class mLSP(object):
         route = " - ".join(match.sub(' ', str(x)) for x in route)
         return route
 
+
 class mInterface(object):
     def __init__(self,name,description,speed,output,rsvpout,ldpout):
         self.name = name
@@ -81,6 +86,7 @@ class mInterface(object):
     
     def __repr__(self):
         return "Interface "+self.name
+
 
 class LSPList(list):
     def __init__(self, *args):
@@ -167,18 +173,30 @@ class LSPList(list):
         for x in set([x.nexthop_interface for x in self]):
             newlist.append(x)
         return newlist
-
+    
     def getAllHosts(self):
         newlist = []
         for x in set([x.to for x in self]):
             newlist.append(x)
         return newlist
+
+    def getAllHostsSortedByOutput(self):
+        newlist = []
+        for x in set([x.to for x in self]):
+            newlist.append(x)
+        return sorted(newlist, key = lambda x: self.getLSPByHost(x).getSumOutput(), reverse = True)
     
     def getSumOutput(self):
         return sum(x.output for x in self if x.output != 'None')
 
     def getSumBandwidth(self):
         return sum([int(re.sub('m','',x.bandwidth)) for x in self if x.bandwidth != 'None'])
+
+    def getAverageRBandwidthByHost(self,host):
+        LSPByHost = [l for l in self.getLSPByHost(host) if l.rbandwidth != 'None']
+        RBandwidthList = [float(re.sub('m','',l.rbandwidth)) for l in LSPByHost]
+        AllLSP = len(LSPByHost)
+        return round(float(sum(RBandwidthList))/AllLSP, 2)
 
     def __find_lsp_fromconfig__(self):
         result = []
@@ -285,6 +303,7 @@ class LSPList(list):
                 result[key] = output
         return result
 
+
 class InterfaceList(list):
     def __init__(self, *args):
         list.__init__(self, *args)
@@ -348,7 +367,7 @@ class InterfaceList(list):
                 except AttributeError:
                     pass
         return result
-        
+
 
 def generateApi():
     host = raw_input('Please enter host: ')
@@ -358,11 +377,14 @@ def generateApi():
     zapi = ZabbixAPI(url='http://zabbix.ihome.ru', user=zabbixaccount.name, password=zabbixaccount.password)
     return router,zapi
 
+
 if __name__ == "__main__":
     router,zapi = generateApi()
+
     lsplist = LSPList() 
     lsplist.setApi(router,zapi)
     lsplist.parse()
+
     intlist = InterfaceList()
     intlist.setApi(router,lsplist)
     intlist.parse()
