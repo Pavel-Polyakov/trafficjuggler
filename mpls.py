@@ -9,8 +9,19 @@ from netaddr import IPNetwork, IPAddress
 from zabbix.api import ZabbixAPI
 
 class mRouter(object):
-    def __init__(self,host):
+    def __init__(self,host,zapi):
         self.__create__(host)
+        self.zapi = zapi
+
+    def parse(self):
+        lsplist = LSPList()
+        lsplist.setApi(self,self.zapi)
+        lsplist.parse()
+        intlist = InterfaceList()
+        intlist.setApi(self,lsplist)
+        intlist.parse()
+        self.lsplist = lsplist
+        self.intlist = intlist
 
     def execute(self,command):
         self.conn.execute('%s | display xml | no-more' % command)
@@ -36,7 +47,6 @@ class mRouter(object):
         else:
             print 'Does not connected. Please check your input'
             sys.exit()
-
 
 class mLSP(object):
     def __init__(self,name,to,bandwidth,path,state,output,nexthop_interface,rbandwidth):
@@ -368,30 +378,21 @@ class InterfaceList(list):
                     pass
         return result
 
-
-def generateApi():
-    host = raw_input('Please enter host: ')
-    router = mRouter(host)
-    print "Please enter zabbix logo/pass: "
+def getZApi():
+    print "Please enter zabbix account information"
     zabbixaccount = read_login()
     zapi = ZabbixAPI(url='http://zabbix.ihome.ru', user=zabbixaccount.name, password=zabbixaccount.password)
-    return router,zapi
-
+    return zapi
 
 if __name__ == "__main__":
-    router,zapi = generateApi()
+    zapi = getZApi() 
+    host = raw_input('Please enter host: ')
+    router = mRouter(host,zapi)
+    router.parse()
 
-    lsplist = LSPList() 
-    lsplist.setApi(router,zapi)
-    lsplist.parse()
-
-    intlist = InterfaceList()
-    intlist.setApi(router,lsplist)
-    intlist.parse()
-
-    for interface in intlist.sortByOutput():
+    for interface in router.intlist.sortByOutput():
         interface.printInterface()
-        lsplist.getLSPByInterface(interface.name).printLSPList()
+        router.lsplist.getLSPByInterface(interface.name).printLSPList()
         print
 
     router.close()
