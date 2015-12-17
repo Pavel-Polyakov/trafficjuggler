@@ -218,7 +218,10 @@ class LSPList(list):
         LSPByHost = [l for l in self.getLSPByHost(host) if l.rbandwidth != 'None']
         RBandwidthList = [float(re.sub('m','',l.rbandwidth)) for l in LSPByHost]
         AllLSP = len(LSPByHost)
-        return round(float(sum(RBandwidthList))/AllLSP, 2)
+        if AllLSP != 0:
+            return round(float(sum(RBandwidthList))/AllLSP, 2)
+        else:
+            return 0
 
     def __find_lsp_fromconfig__(self):
         result = []
