@@ -2,26 +2,17 @@
 import re
 import time
 import os
+import cPickle as pickle
+import sys
 from Exscript.util.interact import read_login
 from Exscript.protocols import SSH2
 from lxml import etree
 from netaddr import IPNetwork, IPAddress
 from zabbix.api import ZabbixAPI
 
-class mRouter(object):
-    def __init__(self,host,zapi):
+class mExecutor(object):
+    def __init__(self,host):
         self.__create__(host)
-        self.zapi = zapi
-
-    def parse(self):
-        lsplist = LSPList()
-        lsplist.setApi(self,self.zapi)
-        lsplist.parse()
-        intlist = InterfaceList()
-        intlist.setApi(self,lsplist)
-        intlist.parse()
-        self.lsplist = lsplist
-        self.intlist = intlist
 
     def execute(self,command):
         self.conn.execute('%s | display xml | no-more' % command)
@@ -47,6 +38,21 @@ class mRouter(object):
         else:
             print 'Does not connected. Please check your input'
             sys.exit()
+
+class mRouter(object):
+    def __init__(self,host):
+        self.name = host
+    
+    def parse(self,executor,zapi):
+        lsplist = LSPList()
+        lsplist.parse(executor,zapi)
+        intlist = InterfaceList()
+        intlist.parse(executor,lsplist)
+        self.lsplist = lsplist
+        self.intlist = intlist
+    
+    def __repr__(self):
+        return "mRouter %s" % self.name
 
 class mLSP(object):
     def __init__(self,name,to,bandwidth,path,state,output,nexthop_interface,rbandwidth):
@@ -101,12 +107,9 @@ class mInterface(object):
 class LSPList(list):
     def __init__(self, *args):
         list.__init__(self, *args)
-   
-    def setApi(self, router,zabbixapi):
-        self.router = router
-        self.zabbixapi = zabbixapi
   
-    def parse(self):
+    def parse(self,router,zabbixapi):
+        self.__setApi__(router,zabbixapi)
         lsp_fromconfig = self.__find_lsp_fromconfig__()
         path_fromconfig = self.__find_path_fromconfig__()
         routes_fromconfig = self.__find_routes_fromconfig__()
@@ -140,7 +143,16 @@ class LSPList(list):
                                 state = lsp_state,
                                 output = lsp_output,
                                 nexthop_interface = nexthop_interface))
-    
+        self.__unsetApi__()
+   
+    def __setApi__(self,router,zabbixapi):
+        self.router = router
+        self.zabbixapi = zabbixapi
+  
+    def __unsetApi__(self):
+        self.router = None
+        self.zabbixapi = None
+
     def printLSPList(self):
         for LSP in self:
             LSP.printLSP()
@@ -317,12 +329,9 @@ class LSPList(list):
 class InterfaceList(list):
     def __init__(self, *args):
         list.__init__(self, *args)
-
-    def setApi(self, router, lsplist):
-        self.router = router
-        self.lsplist = lsplist
-
-    def parse(self):
+    
+    def parse(self,router,lsplist):
+        self.__setApi__(router,lsplist)
         interfaces_fromcli = self.__find_interfaces_fromcli__()
 
         for interface in self.lsplist.getAllInterfaces():
@@ -340,6 +349,16 @@ class InterfaceList(list):
                                         output = interface_output,
                                         rsvpout = interface_rsvpout,
                                         ldpout = interface_ldpout))
+        self.__unsetApi__()
+
+    def __setApi__(self,router,lsplist):
+        self.router = router
+        self.lsplist = lsplist
+
+    def __unsetApi__(self):
+        self.router = None
+        self.lsplist = None
+   
     def printInterfaceList(self):
         for interface in self:
             interface.printInterface()
@@ -384,11 +403,30 @@ def getZApi():
     zapi = ZabbixAPI(url='http://zabbix.ihome.ru', user=zabbixaccount.name, password=zabbixaccount.password)
     return zapi
 
+def loaditems(file):
+    try:
+        with open('%s.pkl' % (file) ,'rb') as fr:
+            items = pickle.load(fr)
+        return items
+    except IOError:
+        return []
+
+def writeitems(file,items):
+    with open('%s.pkl' % (file),'wb') as fr:
+        pickle.dump(items,fr)
+
 if __name__ == "__main__":
-    zapi = getZApi() 
-    host = raw_input('Please enter host: ')
-    router = mRouter(host,zapi)
-    router.parse()
+    if len(sys.argv)>1 and sys.argv[1] == "load":
+        router = loaditems(sys.argv[2])
+    else: 
+        zapi = getZApi() 
+        host = raw_input('Please enter host: ')
+        executor = mExecutor(host)
+        router = mRouter(host)
+        router.parse(executor,zapi)
+        executor.close()
+        if len(sys.argv)>1 and sys.argv[1] == "save":
+            writeitems(sys.argv[2],router)
 
     print "\nSummary information"
     for interface in router.intlist.sortByOutput():
@@ -415,5 +453,4 @@ if __name__ == "__main__":
                                                                                     speed = interface.speed, 
                                                                                     output = str(round(float(interface.output)/1000,1))+"Gbps", 
                                                                                     util = utilization)
-
-    router.close()
+    
