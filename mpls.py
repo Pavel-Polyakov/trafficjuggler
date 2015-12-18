@@ -50,6 +50,7 @@ class mRouter(object):
         intlist.parse(executor,lsplist)
         self.lsplist = lsplist
         self.intlist = intlist
+        self.last_parse = time.asctime(time.localtime(time.time()))
     
     def __repr__(self):
         return "mRouter %s" % self.name
@@ -457,3 +458,4 @@ if __name__ == "__main__":
                                                                                     output = str(round(float(interface.output)/1000,1))+"Gbps", 
                                                                                     util = utilization)
     
+    print "\nParse time: %s" % router.last_parse
