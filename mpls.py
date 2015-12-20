@@ -135,7 +135,10 @@ class LSPList(list):
                 lsp_rbandwidth = "None"
             if (str(lsp_bandwidth) != "None"): 
                 lsp_bandwidth = str(lsp_bandwidth)+"m"
-        
+            
+            if lsp_output == 0:
+                lsp_output = "Down"
+
             self.append(mLSP(name = lsp_name, 
                                 to = lsp_to, 
                                 path = path_route,
@@ -210,7 +213,7 @@ class LSPList(list):
         return sorted(newlist, key = lambda x: self.getLSPByHost(x).getSumOutput(), reverse = True)
     
     def getSumOutput(self):
-        return sum(x.output for x in self if x.output != 'None')
+        return sum(x.output for x in self if x.output != 'None' and x.output != 'Down')
 
     def getSumBandwidth(self):
         return sum([int(re.sub('m','',x.bandwidth)) for x in self if x.bandwidth != 'None'])
@@ -451,7 +454,10 @@ if __name__ == "__main__":
     for interface in router.intlist.sortByOutput():
         speed = re.sub('Gbps','000',interface.speed)
         output = interface.output                                                                                                                                                                                                                  
-        utilization = str(round(output/float(speed)*100,2))+"%"
+        try:
+            utilization = str(round(output/float(speed)*100,2))+"%"
+        except Exception:
+            utilization = 0
         print '{name:<15}{description:<21}{speed:<12}{output:<12}{util:<15}'.format(name = interface.name, 
                                                                                     description = interface.description, 
                                                                                     speed = interface.speed, 
