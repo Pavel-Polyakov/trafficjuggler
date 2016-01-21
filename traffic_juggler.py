@@ -14,8 +14,8 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    host.parse(executor,zapi)
-#    host = loaditems('m9-r0')
+#    host.parse(executor,zapi)
+    host = loaditems('m9-r0')
     
     interfaces = [x.__dict__ for x in host.intlist.sortByOutput()]
     for interface in interfaces:
@@ -38,11 +38,11 @@ def index():
 
 if __name__ == '__main__':
     HOST = 'm9-r0'
-    zapi = getZApi()
-    executor = mExecutor(HOST)
-    host = mRouter(HOST)
+#    zapi = getZApi()
+#    executor = mExecutor(HOST)
+#    host = mRouter(HOST)
     app.run(
-        host = "0.0.0.0",
+        host = "127.0.0.1",
         debug = True
     )
 
