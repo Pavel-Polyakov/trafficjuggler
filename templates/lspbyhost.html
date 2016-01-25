@@ -3,7 +3,8 @@
   {% for host in hosts %}
   <thead>
     <tr class="bg-primary">
-    <th colspan="2">{{ host['ip'] }}</th>
+    <th>{{ host['ip'] }}</th>
+    <th>{{ host['name']}}</th>
     <th>{{ host['sumbandwidth'] }}</th>
     <th>{{ host['sumoutput']}}</th>
     <th colspan="10">{{ host['rbandwidth']}}</th>

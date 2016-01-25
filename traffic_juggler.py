@@ -9,6 +9,11 @@ def formattedRoute(route):
 def convertToGbps(value):
     return str(round(float(value)/1000,2))+"Gbps"
 
+def resolveHost(value,neigbors):
+    ip = re.sub('to ','',value)
+    if ip in [x['ip'] for x in neigbors]:
+        description = next(x['description'] for x in neigbors if x['ip']==ip)
+    return re.sub(ip,description,value)
 
 app = Flask(__name__)
 
@@ -19,6 +24,7 @@ def index():
 
     hosts = [{'ip': x} for x in router.lsplist.getAllHostsSortedByOutput()]
     for host in hosts:
+        host['name'] = next(x['description'] for x in router.neighbors if x['ip'] == host['ip'])
         host['sumbandwidth'] = str(router.lsplist.getLSPByHost(host['ip']).getSumBandwidth())+'m'
         host['lsplist'] = [x.__dict__ for x in router.lsplist.getLSPByHost(host['ip']).sortByOutput()]
         host['sumoutput'] = convertToGbps(router.lsplist.getLSPByHost(host['ip']).getSumOutput())
@@ -41,6 +47,7 @@ def index():
         lsp['path'] = formattedRoute(lsp['path'])
         if lsp['output'] != 'None' and lsp['output'] != 'Down':
             lsp['output'] = convertToGbps(lsp['output'])
+        lsp['to'] = resolveHost(lsp['to'],router.neighbors)
 
 
 
