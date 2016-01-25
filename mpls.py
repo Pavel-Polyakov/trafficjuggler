@@ -42,7 +42,7 @@ class mExecutor(object):
 class mRouter(object):
     def __init__(self,host):
         self.name = host
-    
+
     def parse(self,executor,zapi):
         lsplist = LSPList()
         lsplist.parse(executor,zapi)
@@ -51,7 +51,7 @@ class mRouter(object):
         self.lsplist = lsplist
         self.intlist = intlist
         self.last_parse = time.asctime(time.localtime(time.time()))
-    
+
     def __repr__(self):
         return "mRouter %s" % self.name
 
@@ -100,7 +100,7 @@ class mInterface(object):
                             output = '* '+str(self.output),
                             rsvpout = 'RSVP:'+str(self.rsvpout),
                             ldpout = 'LDP:'+str(self.ldpout))
-    
+
     def __repr__(self):
         return "Interface "+self.name
 
@@ -108,7 +108,7 @@ class mInterface(object):
 class LSPList(list):
     def __init__(self, *args):
         list.__init__(self, *args)
-  
+
     def parse(self,router,zabbixapi):
         self.__setApi__(router,zabbixapi)
         lsp_fromconfig = self.__find_lsp_fromconfig__()
@@ -116,7 +116,7 @@ class LSPList(list):
         routes_fromconfig = self.__find_routes_fromconfig__()
         lsp_state_fromcli = self.__find_lsp_state_fromcli__()
         lsp_output_fromzabbix = self.__find_lsp_output_fromzabbix__()
-        
+
         for LSP in lsp_fromconfig:
             lsp_name = LSP['name']
             lsp_to = LSP['to']
@@ -127,32 +127,32 @@ class LSPList(list):
             nexthop_interface = next(r['name'] for r in routes_fromconfig if IPAddress(nexthop_ip) in IPNetwork(r['destination']))
             lsp_state = lsp_state_fromcli.get(lsp_name,'Inactive')
             lsp_output = lsp_output_fromzabbix.get(lsp_name,'None')
-            
+
             if (lsp_state != 'Inactive' and str(lsp_output) != 'None'):
                 lsp_rbandwidth = round(float(lsp_output)/lsp_bandwidth,1)
                 lsp_rbandwidth = str(lsp_rbandwidth)+"m"
             else:
                 lsp_rbandwidth = "None"
-            if (str(lsp_bandwidth) != "None"): 
+            if (str(lsp_bandwidth) != "None"):
                 lsp_bandwidth = str(lsp_bandwidth)+"m"
-            
+
             if lsp_output == 0:
                 lsp_output = "Down"
 
-            self.append(mLSP(name = lsp_name, 
-                                to = lsp_to, 
+            self.append(mLSP(name = lsp_name,
+                                to = lsp_to,
                                 path = path_route,
-                                bandwidth = lsp_bandwidth, 
+                                bandwidth = lsp_bandwidth,
                                 rbandwidth = lsp_rbandwidth,
                                 state = lsp_state,
                                 output = lsp_output,
                                 nexthop_interface = nexthop_interface))
         self.__unsetApi__()
-   
+
     def __setApi__(self,router,zabbixapi):
         self.router = router
         self.zabbixapi = zabbixapi
-  
+
     def __unsetApi__(self):
         self.router = None
         self.zabbixapi = None
@@ -166,13 +166,13 @@ class LSPList(list):
         newlist.extend(self)
         newlist.sort(key = lambda lsp: re.sub('m','',lsp.bandwidth), reverse = True)
         return newlist
-        
+
     def sortByOutput(self):
         newlist = LSPList()
         newlist.extend(self)
         newlist.sort(key = lambda lsp: lsp.output, reverse = True)
         return newlist
-        
+
     def getLSPByHost(self,to):
         newlist = LSPList()
         for l in self:
@@ -193,13 +193,13 @@ class LSPList(list):
             if l.state == state:
                 newlist.append(l)
         return newlist
-    
+
     def getAllInterfaces(self):
         newlist = []
         for x in set([x.nexthop_interface for x in self]):
             newlist.append(x)
         return newlist
-    
+
     def getAllHosts(self):
         newlist = []
         for x in set([x.to for x in self]):
@@ -211,15 +211,16 @@ class LSPList(list):
         for x in set([x.to for x in self]):
             newlist.append(x)
         return sorted(newlist, key = lambda x: self.getLSPByHost(x).getSumOutput(), reverse = True)
-    
+
     def getSumOutput(self):
-        return sum(x.output for x in self if x.output != 'None' and x.output != 'Down')
+        return sum(int(x.output) for x in self if x.output != 'None' and x.output != 'Down')
+        #return sum(x.output for x in self if type(x.output) != str)
 
     def getSumBandwidth(self):
         return sum([int(re.sub('m','',x.bandwidth)) for x in self if x.bandwidth != 'None'])
 
     def getAverageRBandwidthByHost(self,host):
-        LSPByHost = [l for l in self.getLSPByHost(host) if l.rbandwidth != 'None']
+        LSPByHost = [l for l in self.getLSPByHost(host) if l.output != 'None' and l.output != 'Down']
         RBandwidthList = [float(re.sub('m','',l.rbandwidth)) for l in LSPByHost]
         AllLSP = len(LSPByHost)
         if AllLSP != 0:
@@ -293,7 +294,7 @@ class LSPList(list):
                     unitname = unit.xpath('string(name/text())')
                     try:
                         destination = unit.xpath('string(family/inet/address/name/text())')
-                    except Exception: 
+                    except Exception:
                         pass
                     if destination != '':
                         INTERFACE = {}
@@ -301,10 +302,10 @@ class LSPList(list):
                         INTERFACE['name'] = finalname
                         INTERFACE['destination'] = destination
                         result.append(INTERFACE)
-            except Exception: 
+            except Exception:
                 pass
         return result
-    
+
     def __find_lsp_state_fromcli__(self):
         result = {}
         command = self.router.execute('show mpls lsp unidirectional ingress')
@@ -314,12 +315,12 @@ class LSPList(list):
             name = tree.xpath('string(mpls-lsp/name/text())')
             result[name] = state
         return result
-    
+
     def __find_lsp_output_fromzabbix__(self):
         result = {}
         router_hostid = ''
         router_name = self.router.name
-        zabbix_hosts = self.zabbixapi.host.getobjects() 
+        zabbix_hosts = self.zabbixapi.host.getobjects()
         router_hostid = next(h['hostid'] for h in zabbix_hosts if h['name'] == router_name)
         zabbix_router_items = self.zabbixapi.item.get(hostids=router_hostid,output='extend')
         for item in zabbix_router_items:
@@ -336,7 +337,7 @@ class LSPList(list):
 class InterfaceList(list):
     def __init__(self, *args):
         list.__init__(self, *args)
-    
+
     def parse(self,router,lsplist):
         self.__setApi__(router,lsplist)
         interfaces_fromcli = self.__find_interfaces_fromcli__()
@@ -365,7 +366,7 @@ class InterfaceList(list):
     def __unsetApi__(self):
         self.router = None
         self.lsplist = None
-   
+
     def printInterfaceList(self):
         for interface in self:
             interface.printInterface()
@@ -425,8 +426,8 @@ def writeitems(file,items):
 if __name__ == "__main__":
     if len(sys.argv)>1 and sys.argv[1] == "load":
         router = loaditems(sys.argv[2])
-    else: 
-        zapi = getZApi() 
+    else:
+        zapi = getZApi()
         host = raw_input('Please enter host: ')
         executor = mExecutor(host)
         router = mRouter(host)
@@ -446,22 +447,22 @@ if __name__ == "__main__":
         lsps = router.lsplist.getLSPByHost(host)
         print '{host:<15}{space:<21}{bandwidth:<12}{output:<12}{rband:<12}'.format(space = ' ',
                                                                                     host=host,
-                                                                                    output=str(round(float(lsps.getSumOutput())/1000,1))+"Gbps", 
-                                                                                    bandwidth=str(lsps.getSumBandwidth())+"m", 
+                                                                                    output=str(round(float(lsps.getSumOutput())/1000,1))+"Gbps",
+                                                                                    bandwidth=str(lsps.getSumBandwidth())+"m",
                                                                                     rband=str(lsps.getAverageRBandwidthByHost(host))+"m")
-    
+
     print "\nInformation related to Interface"
     for interface in router.intlist.sortByOutput():
         speed = re.sub('Gbps','000',interface.speed)
-        output = interface.output                                                                                                                                                                                                                  
+        output = interface.output
         try:
             utilization = str(round(output/float(speed)*100,2))+"%"
         except Exception:
             utilization = 0
-        print '{name:<15}{description:<21}{speed:<12}{output:<12}{util:<15}'.format(name = interface.name, 
-                                                                                    description = interface.description, 
-                                                                                    speed = interface.speed, 
-                                                                                    output = str(round(float(interface.output)/1000,1))+"Gbps", 
+        print '{name:<15}{description:<21}{speed:<12}{output:<12}{util:<15}'.format(name = interface.name,
+                                                                                    description = interface.description,
+                                                                                    speed = interface.speed,
+                                                                                    output = str(round(float(interface.output)/1000,1))+"Gbps",
                                                                                     util = utilization)
-    
+
     print "\nParse time: %s" % router.last_parse
