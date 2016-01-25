@@ -44,6 +44,7 @@ class mRouter(object):
         self.name = host
 
     def parse(self,executor,zapi):
+        self._findneigbors_(executor)
         lsplist = LSPList()
         lsplist.parse(executor,zapi)
         intlist = InterfaceList()
@@ -54,6 +55,16 @@ class mRouter(object):
 
     def __repr__(self):
         return "mRouter %s" % self.name
+    
+    def _findneigbors_(self,executor):
+        ibgp_command = executor.execute('show configuration protocol bgp group ibgp')
+        neighbor_tree = ibgp_command.xpath('//configuration/protocols/bgp/group/neighbor')
+        neighbors = []
+        for neighbor in neighbor_tree:
+            ip = neighbor.find('name').text
+            description = neighbor.find('description').text
+            neighbors.append({'ip': ip, 'description': description})
+        self.neighbors = neighbors
 
 class mLSP(object):
     def __init__(self,name,to,bandwidth,path,state,output,nexthop_interface,rbandwidth):
