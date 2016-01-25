@@ -44,9 +44,9 @@ class mRouter(object):
         self.name = host
 
     def parse(self,executor,zapi):
-        self._findneigbors_(executor)
+        self.neighbors = self.__find_ibgp_neighbors__(executor)
         lsplist = LSPList()
-        lsplist.parse(executor,zapi)
+        lsplist.parse(executor,zapi,self.neighbors)
         intlist = InterfaceList()
         intlist.parse(executor,lsplist)
         self.lsplist = lsplist
@@ -56,20 +56,22 @@ class mRouter(object):
     def __repr__(self):
         return "mRouter %s" % self.name
     
-    def _findneigbors_(self,executor):
-        ibgp_command = executor.execute('show configuration protocol bgp group ibgp')
-        neighbor_tree = ibgp_command.xpath('//configuration/protocols/bgp/group/neighbor')
-        neighbors = []
-        for neighbor in neighbor_tree:
-            ip = neighbor.find('name').text
-            description = neighbor.find('description').text
-            neighbors.append({'ip': ip, 'description': description})
-        self.neighbors = neighbors
+    def __find_ibgp_neighbors__(self,executor):
+        result = []
+        command = executor.execute('show configuration protocol bgp group ibgp')
+        rootTree = command.xpath('//configuration/protocols/bgp/group/neighbor')
+        for tree in rootTree:
+            neighbor = {}
+            neighbor['ip'] = tree.find('name').text
+            neighbor['description'] = tree.find('description').text
+            result.append(neighbor)
+        return result       
 
 class mLSP(object):
-    def __init__(self,name,to,bandwidth,path,state,output,nexthop_interface,rbandwidth):
+    def __init__(self,name,to,to_name,bandwidth,path,state,output,nexthop_interface,rbandwidth):
         self.name = name
         self.to = to
+        self.to_name = to_name
         self.bandwidth = bandwidth
         self.path = path
         self.state = state
@@ -120,7 +122,7 @@ class LSPList(list):
     def __init__(self, *args):
         list.__init__(self, *args)
 
-    def parse(self,router,zabbixapi):
+    def parse(self,router,zabbixapi,ibgp_neighbors):
         self.__setApi__(router,zabbixapi)
         lsp_fromconfig = self.__find_lsp_fromconfig__()
         path_fromconfig = self.__find_path_fromconfig__()
@@ -131,6 +133,7 @@ class LSPList(list):
         for LSP in lsp_fromconfig:
             lsp_name = LSP['name']
             lsp_to = LSP['to']
+            lsp_to_name = next(x['description'] for x in ibgp_neighbors if x['ip'] == lsp_to)
             lsp_bandwidth = LSP['bandwidth']
             path_name = LSP['pathname']
             path_route = next(p['route'] for p in path_fromconfig if p['name'] == path_name)
@@ -138,6 +141,7 @@ class LSPList(list):
             nexthop_interface = next(r['name'] for r in routes_fromconfig if IPAddress(nexthop_ip) in IPNetwork(r['destination']))
             lsp_state = lsp_state_fromcli.get(lsp_name,'Inactive')
             lsp_output = lsp_output_fromzabbix.get(lsp_name,'None')
+            
 
             if (lsp_state != 'Inactive' and str(lsp_output) != 'None'):
                 lsp_rbandwidth = round(float(lsp_output)/lsp_bandwidth,1)
@@ -152,6 +156,7 @@ class LSPList(list):
 
             self.append(mLSP(name = lsp_name,
                                 to = lsp_to,
+                                to_name = lsp_to_name,
                                 path = path_route,
                                 bandwidth = lsp_bandwidth,
                                 rbandwidth = lsp_rbandwidth,
@@ -259,6 +264,7 @@ class LSPList(list):
             LSP['pathname'] = path
             result.append(LSP)
         return result
+
 
     def __setBandwidthInM__(self,band):
         if re.match('m|g', band):
@@ -456,7 +462,8 @@ if __name__ == "__main__":
     print "\nInformation related to Hosts"
     for host in router.lsplist.getAllHostsSortedByOutput():
         lsps = router.lsplist.getLSPByHost(host)
-        print '{host:<15}{space:<21}{bandwidth:<12}{output:<12}{rband:<12}'.format(space = ' ',
+        host_name = next(x['description'] for x in router.neighbors if x['ip'] == host)
+        print '{host:<15}{space:<21}{bandwidth:<12}{output:<12}{rband:<12}'.format(space = host_name,
                                                                                     host=host,
                                                                                     output=str(round(float(lsps.getSumOutput())/1000,1))+"Gbps",
                                                                                     bandwidth=str(lsps.getSumBandwidth())+"m",
