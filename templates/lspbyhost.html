@@ -1,0 +1,35 @@
+{% block lspbyhost%}
+<table class="table table-condensed table-hover">
+  {% for host in hosts %}
+  <thead>
+    <tr class="bg-primary">
+    <th colspan="2">{{ host['ip'] }}</th>
+    <th>{{ host['sumbandwidth'] }}</th>
+    <th>{{ host['sumoutput']}}</th>
+    <th colspan="10">{{ host['rbandwidth']}}</th>
+
+  </tr>
+  </thead>
+      <tbody id="tablebody" class="collapse in">
+          {% for lsp in host['lsplist']%}
+            {% if lsp['state'] == 'Dn' %}
+              <tr class="danger">
+            {% elif lsp['state'] == 'Inactive' %}
+              <tr class="info">
+            {% else %}
+              <tr>
+            {% endif %}
+            <td>{{ lsp['state'] }}</td>
+            <td>{{ lsp['name'] }}</td>
+            <td>{{ lsp['bandwidth'] }}</td>
+            <td>{{ lsp['output'] }}</td>
+            <td>{{ lsp['rbandwidth'] }}</td>
+            <td class="hidden-xs hidden-sm">to {{ lsp['to'] }}</td>
+            <td class="hidden-xs hidden-sm">{{ lsp['path'] }}</td>
+            </tr>
+          {% endfor %}
+      </tbody>
+  <tr><td></td></tr>
+  {% endfor %}
+</table>
+{% endblock %}
