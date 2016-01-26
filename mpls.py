@@ -150,14 +150,15 @@ class LSPList(list):
 
             if (lsp_state != 'Inactive' and str(lsp_output) != 'None'):
                 lsp_rbandwidth = round(float(lsp_output)/lsp_bandwidth,1)
-                lsp_rbandwidth = str(lsp_rbandwidth)+"m"
+                lsp_rbandwidth = str(lsp_rbandwidth)
             else:
                 lsp_rbandwidth = "None"
             if (str(lsp_bandwidth) != "None"):
-                lsp_bandwidth = str(lsp_bandwidth)+"m"
+                lsp_bandwidth = str(lsp_bandwidth)
 
             if lsp_output == 0:
                 lsp_output = "Down"
+
 
             self.append(mLSP(name = lsp_name,
                                 to = lsp_to,
@@ -168,6 +169,12 @@ class LSPList(list):
                                 state = lsp_state,
                                 output = lsp_output,
                                 nexthop_interface = nexthop_interface))
+        for lsp in self:
+            if lsp.output == "None" and lsp.state == "Up":
+                lsp.output_calculated = self.getCalculatedOutputForLSP(lsp)
+                lsp.output_calculated_gpbs = convertToGbps(lsp.output_calculated)
+                lsp.rbandwidth_calculated = self.getAverageRBandwidthByHost(lsp.to)
+
         self.__unsetApi__()
 
     def __setApi__(self,router,zabbixapi):
@@ -251,6 +258,12 @@ class LSPList(list):
         else:
             return 0
 
+    def getCalculatedOutputForLSP(self,lsp):
+        host = lsp.to
+        band = lsp.bandwidth
+        rband = self.getAverageRBandwidthByHost(host)
+        return int(int(band)*rband)
+
     def __find_lsp_fromconfig__(self):
         result = []
         command = self.router.execute('show configuration protocol mpls')
@@ -271,7 +284,6 @@ class LSPList(list):
             LSP['pathname'] = path
             result.append(LSP)
         return result
-
 
     def __setBandwidthInM__(self,band):
         if re.match('m|g', band):
@@ -432,8 +444,6 @@ class InterfaceList(list):
 def convertToGbps(value):
     if value != 'None' and value != 'Down':
         return str(round(float(value)/1000,2))
-    else:
-        return 'None'
 
 def getZApi():
     print "Please enter zabbix account information"

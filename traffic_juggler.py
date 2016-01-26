@@ -16,7 +16,7 @@ def index():
         host['sumoutput'] = router.lsplist.getLSPByHost(ip).getSumOutputGbps()
         host['rbandwidth'] = str(router.lsplist.getAverageRBandwidthByHost(ip))
         host['lsplist'] = [x.__dict__ for x in router.lsplist.getLSPByHost(ip).sortByOutput()]
-
+        host['sumoutput_calculated'] = float(host['sumoutput']) + sum(float(x.output_calculated_gpbs) for x in router.lsplist.getLSPByHost(ip) if hasattr(x, 'output_calculated_gpbs'))
     interfaces = [x.__dict__ for x in router.intlist.sortByOutput()]
     for interface in interfaces:
         interface['lsplist'] = [x.__dict__ for x in router.lsplist.getLSPByInterface(interface['name']).sortByOutput()]

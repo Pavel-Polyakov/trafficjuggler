@@ -6,34 +6,49 @@
     <th>{{ host['ip'] }}</th>
     <th>{{ host['name']}}</th>
     <th>{{ host['sumbandwidth'] }}m</th>
-    <th>{{ host['sumoutput']}}Gbps</th>
-    <th colspan="10">{{ host['rbandwidth']}}m</th>
+
+    {% if host['sumoutput'] != host['sumoutput_calculated'] %}
+    <th>~{{ host['sumoutput_calculated'] }}Gbps</th>
+    {% else %}
+    <th>{{ host['sumoutput'] }}Gbps</th>
+    {% endif %}
+
+    <th colspan="10">~{{ host['rbandwidth']}}Mbps/m</th>
 
   </tr>
   </thead>
       <tbody id="tablebody" class="collapse in">
           {% for lsp in host['lsplist']%}
-            {% if lsp['state'] == 'Dn' %}
-              <tr class="danger">
-            {% elif lsp['state'] == 'Inactive' %}
-              <tr class="info">
-            {% else %}
-              <tr>
-            {% endif %}
-            <td>{{ lsp['state'] }}</td>
-            <td>{{ lsp['name'] }}</td>
-            <td>{{ lsp['bandwidth'] }}</td>
+          {% if lsp['state'] == 'Dn' %}
+            <tr class="danger">
+          {% elif lsp['state'] == 'Inactive' %}
+            <tr class="info">
+          {% else %}
+            <tr>
+          {% endif %}
+          <td>{{ lsp['state'] }}</td>
+          <td>{{ lsp['name'] }}</td>
+          <td>{{ lsp['bandwidth'] }}m</td>
 
-            {% if lsp['output_gbps'] != None %}
-              <td>{{ lsp['output_gbps'] }}Gbps</td>
-            {% else %}
-              <td>{{ lsp['output'] }}</td>
-            {% endif %}
+          {% if lsp['output_gbps'] != None %}
+            <td>{{ lsp['output_gbps'] }}Gbps</td>
+          {% elif lsp['state'] == 'Up' %}
+            <td>~{{ lsp['output_calculated_gpbs'] }}Gbps</td>
+          {% else %}
+            <td>{{ lsp['output_gbps'] }}</td>
+          {% endif %}
 
+          {% if lsp['rbandwidth'] != 'None' %}
+            <td>{{ lsp['rbandwidth'] }}Mbps/m</td>
+          {% elif lsp['state'] == 'Up' %}
+            <td>~{{ lsp['rbandwidth_calculated'] }}Mbps/m</td>
+          {% else %}
             <td>{{ lsp['rbandwidth'] }}</td>
-            <td class="hidden-xs hidden-sm">to {{ lsp['to_name'] }}</td>
-            <td class="hidden-xs hidden-sm">{{ lsp['path_formatted'] }}</td>
-            </tr>
+          {% endif %}
+
+          <td class="hidden-xs hidden-sm">to {{ lsp['to_name'] }}</td>
+          <td class="hidden-xs hidden-sm">{{ lsp['path_formatted'] }}</td>
+          </tr>
           {% endfor %}
       </tbody>
   <tr><td></td></tr>

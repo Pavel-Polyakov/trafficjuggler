@@ -1,3 +1,6 @@
 .nav-tabs>li>a {
     border-radius: 0px;
 }
+.progress {
+    margin-bottom: 0 !important;
+}
