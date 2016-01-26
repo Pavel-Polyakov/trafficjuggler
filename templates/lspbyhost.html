@@ -5,9 +5,9 @@
     <tr class="bg-primary">
     <th>{{ host['ip'] }}</th>
     <th>{{ host['name']}}</th>
-    <th>{{ host['sumbandwidth'] }}</th>
-    <th>{{ host['sumoutput']}}</th>
-    <th colspan="10">{{ host['rbandwidth']}}</th>
+    <th>{{ host['sumbandwidth'] }}m</th>
+    <th>{{ host['sumoutput']}}Gbps</th>
+    <th colspan="10">{{ host['rbandwidth']}}m</th>
 
   </tr>
   </thead>
@@ -23,10 +23,16 @@
             <td>{{ lsp['state'] }}</td>
             <td>{{ lsp['name'] }}</td>
             <td>{{ lsp['bandwidth'] }}</td>
-            <td>{{ lsp['output'] }}</td>
+
+            {% if lsp['output_gbps'] != None %}
+              <td>{{ lsp['output_gbps'] }}Gbps</td>
+            {% else %}
+              <td>{{ lsp['output'] }}</td>
+            {% endif %}
+
             <td>{{ lsp['rbandwidth'] }}</td>
             <td class="hidden-xs hidden-sm">to {{ lsp['to_name'] }}</td>
-            <td class="hidden-xs hidden-sm">{{ lsp['path'] }}</td>
+            <td class="hidden-xs hidden-sm">{{ lsp['path_formatted'] }}</td>
             </tr>
           {% endfor %}
       </tbody>

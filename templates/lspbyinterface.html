@@ -10,7 +10,7 @@
     <th>{{ interface['name'] }}</th>
     <th>{{ interface['description'] }}</th>
     <th>{{ interface['speed'] }}</th>
-    <th>{{ interface['output'] }}</th>
+    <th>{{ interface['output_gbps'] }}Gbps</th>
     <th>{{ interface['utilization'] }}%</th>
     <th class="hidden-xs hidden-sm">RSVP: {{ interface['rsvpout'] }}</th>
     <th class="hidden-xs hidden-sm">LDP: {{ interface['ldpout'] }}</th>
@@ -28,10 +28,16 @@
             <td>{{ lsp['state'] }}</td>
             <td>{{ lsp['name'] }}</td>
             <td>{{ lsp['bandwidth'] }}</td>
-            <td>{{ lsp['output'] }}</td>
+
+            {% if lsp['output_gbps'] != None %}
+              <td>{{ lsp['output_gbps'] }}Gbps</td>
+            {% else %}
+              <td>{{ lsp['output'] }}</td>
+            {% endif %}
+
             <td>{{ lsp['rbandwidth'] }}</td>
             <td class="hidden-xs hidden-sm">to {{ lsp['to_name'] }}</td>
-            <td class="hidden-xs hidden-sm">{{ lsp['path'] }}</td>
+            <td class="hidden-xs hidden-sm">{{ lsp['path_formatted'] }}</td>
             </tr>
           {% endfor %}
       </tbody>

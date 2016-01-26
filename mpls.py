@@ -55,7 +55,7 @@ class mRouter(object):
 
     def __repr__(self):
         return "mRouter %s" % self.name
-    
+
     def __find_ibgp_neighbors__(self,executor):
         result = []
         command = executor.execute('show configuration protocol bgp group ibgp')
@@ -65,7 +65,7 @@ class mRouter(object):
             neighbor['ip'] = tree.find('name').text
             neighbor['description'] = tree.find('description').text
             result.append(neighbor)
-        return result       
+        return result
 
 class mLSP(object):
     def __init__(self,name,to,to_name,bandwidth,path,state,output,nexthop_interface,rbandwidth):
@@ -74,8 +74,10 @@ class mLSP(object):
         self.to_name = to_name
         self.bandwidth = bandwidth
         self.path = path
+        self.path_formatted = self.__formattedRoute__(self.path)
         self.state = state
         self.output = output
+        self.output_gbps = convertToGbps(self.output)
         self.rbandwidth = rbandwidth
         self.nexthop_interface = nexthop_interface
 
@@ -95,15 +97,16 @@ class mLSP(object):
         route = " - ".join(match.sub(' ', str(x)) for x in route)
         return route
 
-
 class mInterface(object):
     def __init__(self,name,description,speed,output,rsvpout,ldpout):
         self.name = name
         self.description = description
         self.speed = speed
         self.output = output
+        self.output_gbps = convertToGbps(output)
         self.rsvpout = rsvpout
         self.ldpout = ldpout
+        self.utilization = self.__getUtilization__()
 
     def printInterface(self):
         intout = '{name:<14s}{description:<37s}{speed:>11s}{output:>14s}  {rsvpout:<12s}{ldpout:<17s}'
@@ -117,6 +120,9 @@ class mInterface(object):
     def __repr__(self):
         return "Interface "+self.name
 
+    def __getUtilization__(self):
+        speed = re.sub('Gbps','000',self.speed)
+        return int(round(self.output/float(speed)*100,2))
 
 class LSPList(list):
     def __init__(self, *args):
@@ -141,7 +147,6 @@ class LSPList(list):
             nexthop_interface = next(r['name'] for r in routes_fromconfig if IPAddress(nexthop_ip) in IPNetwork(r['destination']))
             lsp_state = lsp_state_fromcli.get(lsp_name,'Inactive')
             lsp_output = lsp_output_fromzabbix.get(lsp_name,'None')
-            
 
             if (lsp_state != 'Inactive' and str(lsp_output) != 'None'):
                 lsp_rbandwidth = round(float(lsp_output)/lsp_bandwidth,1)
@@ -230,7 +235,9 @@ class LSPList(list):
 
     def getSumOutput(self):
         return sum(int(x.output) for x in self if x.output != 'None' and x.output != 'Down')
-        #return sum(x.output for x in self if type(x.output) != str)
+
+    def getSumOutputGbps(self):
+        return convertToGbps(self.getSumOutput())
 
     def getSumBandwidth(self):
         return sum([int(re.sub('m','',x.bandwidth)) for x in self if x.bandwidth != 'None'])
@@ -421,6 +428,12 @@ class InterfaceList(list):
                 except AttributeError:
                     pass
         return result
+
+def convertToGbps(value):
+    if value != 'None' and value != 'Down':
+        return str(round(float(value)/1000,2))
+    else:
+        return 'None'
 
 def getZApi():
     print "Please enter zabbix account information"
