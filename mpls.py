@@ -121,8 +121,11 @@ class mInterface(object):
         return "Interface "+self.name
 
     def __getUtilization__(self):
-        speed = re.sub('Gbps','000',self.speed)
-        return int(round(self.output/float(speed)*100,2))
+        if self.speed != '0Gbps':
+            speed = re.sub('Gbps','000',self.speed)
+            return int(round(self.output/float(speed)*100,2))
+        else:
+            return 0
 
 class LSPList(list):
     def __init__(self, *args):
@@ -251,7 +254,10 @@ class LSPList(list):
 
     def getAverageRBandwidthByHost(self,host):
         LSPByHost = [l for l in self.getLSPByHost(host) if l.output != 'None' and l.output != 'Down']
-        RBandwidthList = [float(re.sub('m','',l.rbandwidth)) for l in LSPByHost]
+        try:
+            RBandwidthList = [float(re.sub('m','',str(l.rbandwidth))) for l in LSPByHost]
+        except Exception:
+            pass
         AllLSP = len(LSPByHost)
         if AllLSP != 0:
             return round(float(sum(RBandwidthList))/AllLSP, 2)
@@ -380,10 +386,13 @@ class InterfaceList(list):
 
         for interface in self.lsplist.getAllInterfaces():
             interface_name = interface
-            interface_fromcli = next(i for i in interfaces_fromcli if i['name'] == interface_name)
-            interface_description = interface_fromcli.get('description', 'None')
+            try:
+                interface_fromcli = next(i for i in interfaces_fromcli if i['name'] == interface_name)
+            except Exception:
+                interface_fromcli = {'name': 'None', 'speed': '0Gbps', 'output': 0}
             interface_speed = interface_fromcli.get('speed', 'None')
             interface_output = interface_fromcli.get('output', 'None')
+            interface_description = interface_fromcli.get('description', 'None')
             interface_rsvpout = self.lsplist.getLSPByInterface(interface_name).getSumOutput()
             interface_ldpout = interface_output - interface_rsvpout
 

@@ -2,6 +2,7 @@ from flask import Flask, render_template, request
 from mpls import *
 
 app = Flask(__name__)
+app.config.from_object('config')
 
 @app.route('/')
 def index():
@@ -23,12 +24,20 @@ def index():
 
     return render_template('index.html', interfaces=interfaces, hosts=hosts)
 
+@app.route('/login', methods = ['GET', 'POST'])
+def login():
+    form = LoginForm()
+    return render_template('login.html',
+    title = 'Sign In',
+    form = form)
+
 if __name__ == '__main__':
     HOST = 'm9-r0'
 #    zapi = getZApi()
 #    executor = mExecutor(HOST)
 #    router = mRouter(HOST)
     app.run(
-        host = "127.0.0.1",
+#        host = "127.0.0.1",
+        host = "0.0.0.0",
         debug = True
     )
