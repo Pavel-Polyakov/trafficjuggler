@@ -23,13 +23,6 @@ def index():
 
     return render_template('index.html', interfaces=interfaces, hosts=hosts)
 
-@app.route('/login', methods = ['GET', 'POST'])
-def login():
-    form = LoginForm()
-    return render_template('login.html',
-    title = 'Sign In',
-    form = form)
-
 if __name__ == '__main__':
     HOST = 'm9-r0'
     zapi = getZApi()
