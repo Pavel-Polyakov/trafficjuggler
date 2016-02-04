@@ -3,6 +3,8 @@ from getpass import getpass
 import re
 import sys
 
+#WARNING: this script uses NETCONF and doesn't work on devices without it
+
 def connect():
     host = raw_input('host: ')
     user = raw_input('username: ')
