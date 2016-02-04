@@ -2,7 +2,6 @@ from flask import Flask, render_template, request
 from mpls import *
 
 app = Flask(__name__)
-app.config.from_object('config')
 
 @app.route('/')
 def index():
