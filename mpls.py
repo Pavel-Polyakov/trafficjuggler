@@ -27,6 +27,9 @@ class mExecutor(object):
         self.conn.send('exit\r')
         self.conn.close()
 
+    def get_time(self):
+            return int(self.execute('show system uptime').xpath('//system-uptime-information/current-time/date-time')[0].attrib['{http://xml.juniper.net/junos/12.3R8/junos}seconds'])
+
     def __create__(self,host):
         account = read_login()
         self.name = host
@@ -43,10 +46,10 @@ class mRouter(object):
     def __init__(self,host):
         self.name = host
 
-    def parse(self,executor,zapi):
+    def parse(self,executor):
         self.neighbors = self.__find_ibgp_neighbors__(executor)
         lsplist = LSPList()
-        lsplist.parse(executor,zapi,self.neighbors)
+        lsplist.parse(executor,self.neighbors)
         intlist = InterfaceList()
         intlist.parse(executor,lsplist)
         self.lsplist = lsplist
@@ -131,13 +134,13 @@ class LSPList(list):
     def __init__(self, *args):
         list.__init__(self, *args)
 
-    def parse(self,router,zabbixapi,ibgp_neighbors):
-        self.__setApi__(router,zabbixapi)
+    def parse(self,router,ibgp_neighbors):
+        self.__setApi__(router)
         lsp_fromconfig = self.__find_lsp_fromconfig__()
         path_fromconfig = self.__find_path_fromconfig__()
         routes_fromconfig = self.__find_routes_fromconfig__()
         lsp_state_fromcli = self.__find_lsp_state_fromcli__()
-        lsp_output_fromzabbix = self.__find_lsp_output_fromzabbix__()
+        lsp_output_fromcli = self.__find_lsp_output_fromcli__()
 
         for LSP in lsp_fromconfig:
             lsp_name = LSP['name']
@@ -149,7 +152,7 @@ class LSPList(list):
             nexthop_ip = path_route[0]
             nexthop_interface = next(r['name'] for r in routes_fromconfig if IPAddress(nexthop_ip) in IPNetwork(r['destination']))
             lsp_state = lsp_state_fromcli.get(lsp_name,'Inactive')
-            lsp_output = lsp_output_fromzabbix.get(lsp_name,'None')
+            lsp_output = lsp_output_fromcli.get(lsp_name,'None')
 
             if (lsp_state != 'Inactive' and str(lsp_output) != 'None'):
                 lsp_rbandwidth = round(float(lsp_output)/lsp_bandwidth,1)
@@ -180,13 +183,13 @@ class LSPList(list):
 
         self.__unsetApi__()
 
-    def __setApi__(self,router,zabbixapi):
+    def __setApi__(self,router):
         self.router = router
-        self.zabbixapi = zabbixapi
+        #self.zabbixapi = zabbixapi
 
     def __unsetApi__(self):
         self.router = None
-        self.zabbixapi = None
+        #self.zabbixapi = None
 
     def printLSPList(self):
         for LSP in self:
@@ -358,6 +361,38 @@ class LSPList(list):
             result[name] = state
         return result
 
+    def __find_lsp_output_fromcli__(self):
+        return self.__get_average_lsp_bps__(self.__get_lsp_stat_list__())
+
+    def __get_lsp_output_stat__(self):
+        stat_time = self.router.get_time()
+        stat_cli = self.router.execute('show mpls lsp unidirectional ingress statistics')
+        stat_lsps = stat_cli.xpath('//mpls-lsp-information/rsvp-session-data/rsvp-session/mpls-lsp')
+        result = {}
+        for lsp in stat_lsps:
+            name = lsp.xpath('string(name/text())')
+            bytes = lsp.xpath('string(lsp-bytes/text())')
+            result[name] = bytes
+        result['time'] = stat_time
+        return result
+
+    def __get_lsp_stat_list__(self,accuracy=5,latency=2):
+        result = []
+        for x in xrange(0,accuracy):
+            result.append(self.__get_lsp_output_stat__())
+            time.sleep(latency)
+        return result
+
+    def __get_average_lsp_bps__(self,lsp_stats):
+        result = {}
+        lsp_list = [x[0] for x in lsp_stats[0].items() if x[0] != 'time']
+        for lsp in lsp_list:
+            s = [[int(x[lsp]),float(x['time'])] for x in lsp_stats]
+            bps_list = [(s[s.index(x)+1][0]-x[0])/(s[s.index(x)+1][1]-x[1]) for x in s if s[::-1].index(x) != 0]
+            bps_average = sum(bps_list)/float(len(bps_list))
+            result[lsp] = (bps_average*8)/(1000*1000)
+        return result
+
     def __find_lsp_output_fromzabbix__(self):
         result = {}
         router_hostid = ''
@@ -476,11 +511,11 @@ if __name__ == "__main__":
     if len(sys.argv)>1 and sys.argv[1] == "load":
         router = loaditems(sys.argv[2])
     else:
-        zapi = getZApi()
+        #zapi = getZApi()
         host = raw_input('Please enter host: ')
         executor = mExecutor(host)
         router = mRouter(host)
-        router.parse(executor,zapi)
+        router.parse(executor)
         executor.close()
         if len(sys.argv)>1 and sys.argv[1] == "save":
             writeitems(sys.argv[2],router)

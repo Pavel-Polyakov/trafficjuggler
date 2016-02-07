@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    router.parse(executor,zapi)
+    router.parse(executor)
 #    router = loaditems('m9-r0')
 
     hosts = [{'ip': x} for x in router.lsplist.getAllHostsSortedByOutput()]
@@ -25,11 +25,11 @@ def index():
 
 if __name__ == '__main__':
     HOST = 'm9-r0'
-    zapi = getZApi()
+#    zapi = getZApi()
     executor = mExecutor(HOST)
     router = mRouter(HOST)
     app.run(
-        host = "127.0.0.1",
-#        host = "0.0.0.0",
+#        host = "127.0.0.1",
+        host = "0.0.0.0",
         debug = True
     )
