@@ -385,12 +385,13 @@ class LSPList(list):
 
     def __get_average_lsp_bps__(self,lsp_stats):
         result = {}
-        lsp_list = [x[0] for x in lsp_stats[0].items() if x[0] != 'time']
+        lsp_list = [x[0] for x in lsp_stats[0].items() if x[0] != 'time' and x[0] != 'NA']
         for lsp in lsp_list:
-            s = [[int(x[lsp]),float(x['time'])] for x in lsp_stats]
+            s = [[int(x[lsp]),float(x['time'])] for x in lsp_stats if x[lsp] != 'NA']
             bps_list = [(s[s.index(x)+1][0]-x[0])/(s[s.index(x)+1][1]-x[1]) for x in s if s[::-1].index(x) != 0]
-            bps_average = sum(bps_list)/float(len(bps_list))
-            result[lsp] = (bps_average*8)/(1000**2)
+            if len(bps_list) != 'NA' and len(bps_list)>0:
+                bps_average = sum(bps_list)/float(len(bps_list))
+                result[lsp] = (bps_average*8)/(1000**2)
         return result
 
     def __find_lsp_output_fromzabbix__(self):
