@@ -376,7 +376,7 @@ class LSPList(list):
         result['time'] = stat_time
         return result
 
-    def __get_lsp_stat_list__(self,accuracy=5,latency=2):
+    def __get_lsp_stat_list__(self,accuracy=5,latency=5):
         result = []
         for x in xrange(0,accuracy):
             result.append(self.__get_lsp_output_stat__())
@@ -390,7 +390,7 @@ class LSPList(list):
             s = [[int(x[lsp]),float(x['time'])] for x in lsp_stats]
             bps_list = [(s[s.index(x)+1][0]-x[0])/(s[s.index(x)+1][1]-x[1]) for x in s if s[::-1].index(x) != 0]
             bps_average = sum(bps_list)/float(len(bps_list))
-            result[lsp] = (bps_average*8)/(1000*1000)
+            result[lsp] = (bps_average*8)/(1000**2)
         return result
 
     def __find_lsp_output_fromzabbix__(self):
