@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from TrafficJuggler.parser import Parser
 from TrafficJuggler.builders.routerbuilder import RouterBuilder
 from TrafficJuggler.util import loaditems,saveitems
 import re
@@ -12,8 +11,7 @@ if __name__ == "__main__":
     else:
         #zapi = getZApi()
         host = raw_input('Please enter host: ')
-        parser = Parser(host)
-        builder = RouterBuilder(host,parser)
+        builder = RouterBuilder(host)
         router = builder.create()
 
         if len(sys.argv)>1 and sys.argv[1] == "save":

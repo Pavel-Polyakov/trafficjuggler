@@ -1,12 +1,14 @@
 from TrafficJuggler.models.router import Router
+from TrafficJuggler.parser import Parser
 from lsplistbuilder import LSPListBuilder
 from interfacelistbuilder import InterfaceListBuilder
+
 import time
 
 class RouterBuilder(object):
-    def __init__(self, hostname ,parser):
+    def __init__(self, hostname):
         self.hostname = hostname
-        self.parser = parser
+        self.parser = Parser(hostname)
 
     def create(self):
         lsplistbuilder = LSPListBuilder(self.parser)

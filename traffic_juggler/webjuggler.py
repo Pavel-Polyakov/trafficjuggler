@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request
-from TrafficJuggler.parser import Parser
 from TrafficJuggler.builders.routerbuilder import RouterBuilder
 from TrafficJuggler.util import loaditems
 
@@ -27,10 +26,9 @@ def index():
 
 if __name__ == '__main__':
     HOST = 'm9-r0'
-    parser = Parser(HOST)
-    builder = RouterBuilder(HOST,parser)
+    builder = RouterBuilder(HOST)
     app.run(
 #        host = "127.0.0.1",
         host = "0.0.0.0",
-        debug = True
+#        debug = True
     )
