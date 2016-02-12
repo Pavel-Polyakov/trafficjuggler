@@ -11,7 +11,10 @@ class Parser(object):
         self.executor.close()
 
     def get_time(self):
-        return int(self.executor.getXMLByCommand('show system uptime').xpath('//system-uptime-information/current-time/date-time')[0].attrib['{http://xml.juniper.net/junos/12.3R8/junos}seconds'])
+        h = self.executor.getXMLByCommand('show system uptime').xpath('//system-uptime-information/current-time/date-time')[0].attrib
+        for p in h:
+            result =  h[p]
+        return result
 
     def get_ibgp_neighbors(self):
         result = []
