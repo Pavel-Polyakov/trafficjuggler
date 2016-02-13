@@ -2,21 +2,18 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
 from TrafficJuggler.models.base import Base
-from TrafficJuggler.models.image import Image
 
-class Interface(Base):
-    __tablename__ = "interfaces"
+class Host(Base):
+    __tablename__ = "hosts"
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
     description = Column(String)
     speed = Column(Integer)
     output = Column(Integer)
-#    state = Column(String)
-    utilization = Column(Integer)
+    state = Column(String)
     image_id = Column(Integer, ForeignKey('images.id'))
-    image = relationship(Image, backref='interfaces')
-
+    image = relationship(Image, back_populates="interfaces")
 
     def __repr__(self):
         return "<Interface ({name})>".format(name=self.name)

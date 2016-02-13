@@ -62,7 +62,7 @@ class Parser(object):
             result.append(PATH)
         return result
 
-    def get_routes(self):
+    def get_interfaces_config(self):
         result = []
         command = self.executor.getXMLByCommand('show configuration interfaces')
         rootTree = command.xpath('//configuration/interfaces/interface')
@@ -155,5 +155,5 @@ class Parser(object):
             bps_list = [(s[s.index(x)+1][0]-x[0])/(s[s.index(x)+1][1]-x[1]) for x in s if s[::-1].index(x) != 0]
             if len(bps_list) != 'NA' and len(bps_list)>0:
                 bps_average = sum(bps_list)/float(len(bps_list))
-                result[lsp] = (bps_average*8)/(1000**2)
+                result[lsp] = int((bps_average*8)/(1000**2))
         return result

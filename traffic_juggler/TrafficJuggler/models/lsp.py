@@ -1,33 +1,25 @@
-from TrafficJuggler.util import convertToGbps
-import re
+from sqlalchemy import Column, Integer, String, ForeignKey, Float
+from sqlalchemy.orm import relationship
 
-class LSP(object):
-    def __init__(self,name,to,to_name,path,bandwidth,rbandwidth,state,output,nexthop_interface):
-        self.name = name
-        self.to = to
-        self.to_name = to_name
-        self.path = path
-        self.path_formatted = self.__formattedRoute__(self.path)
-        self.bandwidth = bandwidth
-        self.rbandwidth = rbandwidth
-        self.state = state
-        self.output = output
-        self.output_gbps = convertToGbps(self.output)
-        self.nexthop_interface = nexthop_interface
+from TrafficJuggler.models.interface import Interface
+from TrafficJuggler.models.image import Image
+from TrafficJuggler.models.base import Base
 
-    def printLSP(self):
-        lspout = '{state:<14s}{name:<37s}{bandwidth:>11s}{output:>14s}  {rbandwidth:<12s}{route:<10s}'
-        print lspout.format(name = self.name,
-                            state = self.state,
-                            bandwidth = str(self.bandwidth),
-                            output = str(self.output),
-                            rbandwidth = str(self.rbandwidth),
-                            route = self.__formattedRoute__(self.path))
+class LSP(Base):
+    __tablename__ = "lsps"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    to = Column(String)
+    path = Column(String)
+    bandwidth = Column(Integer)
+    rbandwidth = Column(Float)
+    state = Column(String)
+    output = Column(Integer)
+    interface_id = Column(Integer, ForeignKey('interfaces.id'))
+    interface = relationship(Interface, backref="lsps")
+    image_id = Column(Integer, ForeignKey('images.id'))
+    image = relationship(Image, backref="lsps")
 
     def __repr__(self):
-        return "LSP "+self.name
-
-    def __formattedRoute__(self,route):
-        match = re.compile('(?<=\.\d\d$)')
-        route = " - ".join(match.sub(' ', str(x)) for x in route)
-        return route
+        return "<LSP ({name})>".format(name=self.name)
