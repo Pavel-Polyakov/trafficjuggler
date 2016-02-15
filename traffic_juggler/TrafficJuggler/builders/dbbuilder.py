@@ -1,7 +1,8 @@
 from TrafficJuggler.models.base import Base
+from TrafficJuggler.models.host import Host
 from TrafficJuggler.models.interface import Interface
-from TrafficJuggler.models.lsp import LSP
 from TrafficJuggler.models.image import Image
+from TrafficJuggler.models.lsp import LSP
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
