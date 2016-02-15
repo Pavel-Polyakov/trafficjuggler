@@ -1,5 +1,6 @@
 from TrafficJuggler.models.image import Image
 from TrafficJuggler.models.host import Host
+from TrafficJuggler.models.interface import Interface
 from TrafficJuggler.parser import Parser
 
 from TrafficJuggler.builders.lsplistbuilder import LSPListBuilder
@@ -22,13 +23,14 @@ class ImageBuilder(object):
     def parse(self):
         image = Image(router=self.hostname)
 
+        # add hosts if its not exist
         hostbuilder = HostBuilder(self.parser)
         hosts = hostbuilder.create()
         for h in hosts:
             if not self.session.query(Host.ip).filter(Host.ip==h.ip).first():
                 self.session.add(h)
 
-        # firstly lets find all lsp related information
+        # then lets find all lsp related information
         lsplistbuilder = LSPListBuilder(self.parser)
         interfacelistbuilder = InterfaceListBuilder(self.parser)
         lsplist = lsplistbuilder.create()
@@ -44,18 +46,18 @@ class ImageBuilder(object):
         for i in interfacelist:
             i.image = image
 
-        # set nexthop_interface to lsps
-        for l in lsplist:
-            nh_name = [x['name'] for x in nhinterfaces if x['ip'] == findFirstHop(l.path)][0]
-            nh_interface = [x for x in interfacelist if x.name == nh_name][0]
-            l.interface = nh_interface
+        self.session.add_all(interfacelist)
 
         for l in lsplist:
             l.image = image
 
-        self.session.add_all(lsplist)
-        self.session.add_all(interfacelist)
+        # set nexthop_interface to lsps
+        for l in lsplist:
+            nh_name = [x['name'] for x in nhinterfaces if x['ip'] == findFirstHop(l.path)][0]
+            nh_interface = self.session.query(Interface).filter(Interface.image_id == image.id).filter(Interface.name == nh_name).first()
+            l.interface = nh_interface
 
+        self.session.add_all(lsplist)
         self.session.commit()
 
     def getNextHopInterfaces(self, lsplist):
