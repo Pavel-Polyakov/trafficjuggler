@@ -9,8 +9,8 @@
   {% endif %}
     <th>{{ interface['name'] }}</th>
     <th>{{ interface['description'] }}</th>
-    <th>{{ interface['speed'] }}</th>
-    <th>{{ interface['output_gbps'] }}Gbps</th>
+    <th>{{ (interface['speed']/1000)|int }}Gbps</th>
+    <th>{{ (interface['output']/1000)|round(2) }}Gbps</th>
 <th>
     <div class="progress">
       <div data-percentage="0%" style="width: {{ interface['utilization'] }}%" class="progress-bar progress-bar-success" role="progressbar" aria-valuemin="0" aria-valuemax="100">
@@ -20,8 +20,8 @@
 
   </th>
 
-    <th class="hidden-xs hidden-sm">RSVP: {{ interface['rsvpout'] }}</th>
-    <th class="hidden-xs hidden-sm">LDP: {{ interface['ldpout'] }}</th>
+    <th class="hidden-xs hidden-sm">RSVP: {{ (interface['rsvpout']/1000)|round(2) }}Gbps</th>
+    <th class="hidden-xs hidden-sm">LDP: {{ (interface['ldpout']/1000)|round(2) }}Gbps</th>
   </tr>
   </thead>
       <tbody class="collapse in">
@@ -37,24 +37,20 @@
             <td>{{ lsp['name'] }}</td>
             <td>{{ lsp['bandwidth'] }}m</td>
 
-            {% if lsp['output_gbps'] != None %}
-              <td>{{ lsp['output_gbps'] }}Gbps</td>
-            {% elif lsp['state'] == 'Up' %}
-              <td>~{{ lsp['output_calculated_gpbs'] }}Gbps</td>
+            {% if lsp['output'] != None %}
+              <td>{{ (lsp['output']/1000)|round(2) }}Gbps</td>
             {% else %}
-              <td>{{ lsp['output_gbps'] }}</td>
+              <td>{{ lsp['output'] }}</td>
             {% endif %}
 
-            {% if lsp['rbandwidth'] != 'None' %}
+            {% if lsp['rbandwidth'] != None %}
               <td>{{ lsp['rbandwidth'] }}Mbps/m</td>
-            {% elif lsp['state'] == 'Up' %}
-              <td>~{{ lsp['rbandwidth_calculated'] }}Mbps/m</td>
             {% else %}
               <td>{{ lsp['rbandwidth'] }}</td>
             {% endif %}
 
-            <td class="hidden-xs hidden-sm">to {{ lsp['to_name'] }}</td>
-            <td class="hidden-xs hidden-sm">{{ lsp['path_formatted'] }}</td>
+            <td class="hidden-xs hidden-sm">to {{ lsp['to'] }}</td>
+            <td class="hidden-xs hidden-sm">{{ lsp['path'] }}</td>
             </tr>
           {% endfor %}
       </tbody>

@@ -28,10 +28,10 @@ class LSPList(list):
                 newlist.append(l)
         return newlist
 
-    def getLSPByInterface(self,interface):
+    def getLSPByInterfaceId(self,interface):
         newlist = LSPList()
         for l in self:
-            if l.nexthop_interface == interface:
+            if l.interface_id == interface:
                 newlist.append(l)
         return newlist
 
@@ -68,18 +68,18 @@ class LSPList(list):
         return sorted(newlist, key = lambda x: self.getLSPByHost(x).getSumOutput(), reverse = True)
 
     def getSumOutput(self):
-        return sum(int(x.output) for x in self if x.output != 'None' and x.output != 'Down')
+        return sum(int(x.output) for x in self if x.output != None and x.output != 'Down')
 
     def getSumOutputGbps(self):
         return convertToGbps(self.getSumOutput())
 
     def getSumBandwidth(self):
-        return sum([int(re.sub('m','',x.bandwidth)) for x in self if x.bandwidth != 'None'])
+        return sum([x.bandwidth for x in self if x.bandwidth != None])
 
     def getAverageRBandwidthByHost(self,host):
-        LSPByHost = [l for l in self.getLSPByHost(host) if l.output != 'None' and l.output != 'Down']
+        LSPByHost = [l for l in self.getLSPByHost(host) if l.output != None and l.output != 'Down']
         try:
-            RBandwidthList = [float(re.sub('m','',str(l.rbandwidth))) for l in LSPByHost]
+            RBandwidthList = [l.rbandwidth for l in LSPByHost]
         except Exception:
             pass
         AllLSP = len(LSPByHost)

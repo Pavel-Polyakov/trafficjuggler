@@ -38,15 +38,15 @@ class ImageBuilder(object):
         # then I will find information about interfaces, but only needed
         # so firstly I need to find its names
         nhinterfaces = self.getNextHopInterfaces(lsplist)
-
         # and create needed objects
-        nhnames = [x['name'] for x in nhinterfaces]
+        nhnames = set([x['name'] for x in nhinterfaces])
         interfacelist = interfacelistbuilder.create(nhnames)
 
         for i in interfacelist:
             i.image = image
 
         self.session.add_all(interfacelist)
+        self.session.commit()
 
         for l in lsplist:
             l.image = image
@@ -55,7 +55,7 @@ class ImageBuilder(object):
         for l in lsplist:
             nh_name = [x['name'] for x in nhinterfaces if x['ip'] == findFirstHop(l.path)][0]
             nh_interface = self.session.query(Interface).filter(Interface.image_id == image.id).filter(Interface.name == nh_name).first()
-            l.interface = nh_interface
+            l.interface_id = nh_interface.id
 
         self.session.add_all(lsplist)
         self.session.commit()
