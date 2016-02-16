@@ -6,6 +6,8 @@ from TrafficJuggler.models.interface import Interface
 from TrafficJuggler.models.interfacelist import InterfaceList
 from TrafficJuggler.models.host import Host
 from TrafficJuggler.models.image import Image
+from TrafficJuggler.parser import Parser
+from TrafficJuggler.builders.imagebuilder import ImageBuilder
 
 from pytz import timezone
 app = Flask(__name__)
@@ -44,6 +46,11 @@ def index():
                             hosts=hosts,
                             last_parse=last_parse)
 
+@app.route('/update')
+def update():
+    rb.parse()
+    return render_template('update.html')
+
 def getLastParse():
     last_parse = session.query(Image).all()[-1].time
     utc = timezone('UTC')
@@ -64,6 +71,10 @@ def getInterfaceListByImageId(id):
 
 
 if __name__ == '__main__':
+    HOST = 'm9-r0'
+    parser = Parser(HOST)
+    rb = ImageBuilder(HOST, session, parser)
+
     app.run(
 #        host = "127.0.0.1",
         host = "0.0.0.0",
