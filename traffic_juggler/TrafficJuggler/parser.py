@@ -1,5 +1,6 @@
 from TrafficJuggler.util import convertBandwidthToM
 from TrafficJuggler.executor import Executor
+from netaddr import IPNetwork
 import time
 import re
 
@@ -127,6 +128,17 @@ class Parser(object):
 
     def get_lsp_output(self):
         return self.__get_average_lsp_bps__(self.__get_lsp_stat_list__())
+
+    def get_prefixes_by_host(self):
+        result = []
+        ospfdb = self.executor.getXMLByCommand('show ospf database detail netsummary')
+        for lsa in ospfdb.xpath('ospf-database-information/ospf-database'):
+            host_ip = lsa.xpath('advertising-router')[0].text
+            lsa_id = lsa.xpath('lsa-id')[0].text
+            mask = lsa.xpath('ospf-summary-lsa/address-mask')[0].text
+            prefix = IPNetwork(lsa_id+'/'+mask)
+            result.append({'host_ip':host_ip, 'prefix':str(prefix)})
+        return result
 
     def __get_lsp_output_stat__(self):
         stat_time = self.get_time()

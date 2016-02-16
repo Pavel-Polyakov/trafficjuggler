@@ -4,14 +4,10 @@
   <thead>
     <tr class="bg-primary">
     <th>{{ host['ip'] }}</th>
-    <th>{{ host['name']}}</th>
+    <th class="nowrap">{{ host['name']}}</th>
     <th>{{ host['sumbandwidth'] }}m</th>
-
-    {% if host['sumoutput'] != host['sumoutput_calculated'] %}
-    <th>~{{ host['sumoutput_calculated'] }}Gbps</th>
-    {% else %}
     <th>{{ host['sumoutput'] }}Gbps</th>
-    {% endif %}
+
 
     <th colspan="10">~{{ host['rbandwidth']}}Mbps/m</th>
 
@@ -27,7 +23,7 @@
             <tr>
           {% endif %}
           <td>{{ lsp['state'] }}</td>
-          <td>{{ lsp['name'] }}</td>
+          <td class="nowrap">{{ lsp['name'] }}</td>
           <td>{{ lsp['bandwidth'] }}m</td>
 
           {% if lsp['output'] != None %}
@@ -42,7 +38,7 @@
             <td>{{ lsp['rbandwidth'] }}</td>
           {% endif %}
 
-          <td class="hidden-xs hidden-sm">to {{ lsp['to'] }}</td>
+          <td class="hidden-xs hidden-sm nowrap">to <abbr title="{{ lsp['to'] }}">{{ lsp['to_name'] }}</abbr></td>
           <td class="hidden-xs hidden-sm">{{ lsp['path'] }}</td>
           </tr>
           {% endfor %}

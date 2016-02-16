@@ -1,6 +1,11 @@
 .nav-tabs>li>a {
     border-radius: 0px;
 }
+.nowrap {
+    overflow-x:auto;
+    overflow-y:hidden;
+    white-space: nowrap;
+}
 .progress {
     margin-bottom: 0 !important;
 }

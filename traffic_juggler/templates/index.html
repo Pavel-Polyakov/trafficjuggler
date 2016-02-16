@@ -1,8 +1,12 @@
 {% extends "base.html"%}
 
 {% block content %}
-
 <nav class="with-nav-tabs">
+  <p class = "navbar-text pull-right">
+    <span class="label label-success">
+      <span class="hidden-xs hidden-sm">Последнее обновление: </span>{{ last_parse }}
+    </span>
+  </p>
   <div class="panel-heading">
     <ul class="nav nav-tabs">
       <li class="active"><a href="#lspbyinterface" data-toggle="tab">По интерфейсам</a></li>

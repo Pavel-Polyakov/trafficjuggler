@@ -1,8 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.sql import func
-
 from TrafficJuggler.models.base import Base
+
 
 class Image(Base):
     __tablename__ = "images"
@@ -12,4 +11,5 @@ class Image(Base):
     router = Column(String)
 
     def __repr__(self):
-        return "<Image ({router},{time})>".format(router=self.router, time=self.time)
+        return "<Image ({router},{time})>".format(router=self.router,
+                                                  time=self.time)
