@@ -1,59 +1,56 @@
 {% block lspbyinterface %}
-<table class="table table-condensed table-hover">
+<table class="table table-hover">
   {% for interface in interfaces %}
   <thead>
-  {% if interface['speed'] == "Unspecified" %}
-    <tr class="bg-danger text-danger">
-  {% else %}
-    <tr class="bg-primary">
-  {% endif %}
-    <th class="nowrap">{{ interface['name'] }}</th>
-    <th class="nowrap">{{ interface['description'] }}</th>
-    <th>{{ (interface['speed']/1000)|int }}Gbps</th>
-    <th>{{ (interface['output']/1000)|round(2) }}Gbps</th>
-<th>
-    <div class="progress">
-      <div data-percentage="0%" style="width: {{ interface['utilization'] }}%" class="progress-bar progress-bar-success" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-    </div>
-    <span class="text-success">{{ interface['utilization'] }}%</span>
-    </div>
-
-  </th>
-
-    <th class="hidden-xs hidden-sm nowrap">RSVP: {{ (interface['rsvpout']/1000)|round(2) }}Gbps</th>
-    <th class="hidden-xs hidden-sm nowrap">LDP: {{ (interface['ldpout']/1000)|round(2) }}Gbps</th>
-  </tr>
+    {% if interface['speed'] == "Unspecified" %}
+      <tr class="bg-danger text-danger">
+    {% else %}
+      <tr class="bg-primary">
+    {% endif %}
+      <th class="nowrap">{{ interface['name'] }}</th>
+      <th class="nowrap">{{ interface['description'] }}</th>
+      <th>{{ (interface['speed']/1000)|int }}Gbps</th>
+      <th>{{ (interface['output']/1000)|round(2) }}Gbps</th>
+    <th>
+      <div class="progress">
+        <div data-percentage="0%" style="width: {{ interface['utilization'] }}%" class="progress-bar progress-bar-success" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+        </div>
+        <span class="text-success">{{ interface['utilization'] }}%</span>
+      </div>
+    </th>
+      <th class="hidden-xs hidden-sm nowrap">RSVP: {{ (interface['rsvpout']/1000)|round(2) }}Gbps</th>
+      <th class="hidden-xs hidden-sm nowrap">LDP: {{ (interface['ldpout']/1000)|round(2) }}Gbps</th>
+    </tr>
   </thead>
-      <tbody class="collapse in">
-          {% for lsp in interface['lsplist']%}
-            {% if lsp['state'] == 'Dn' %}
-              <tr class="danger">
-            {% elif lsp['state'] == 'Inactive' %}
-              <tr class="info">
-            {% else %}
-              <tr>
-            {% endif %}
-            <td>{{ lsp['state'] }}</td>
-            <td class="nowrap">{{ lsp['name'] }}</td>
-            <td>{{ lsp['bandwidth'] }}m</td>
+  <tbody class="collapse in">
+      {% for lsp in interface['lsplist']%}
+        {% if lsp['state'] == 'Dn' %}
+          <tr class="danger">
+        {% elif lsp['state'] == 'Inactive' %}
+          <tr class="info">
+        {% else %}
+          <tr>
+        {% endif %}
+        <td>{{ lsp['state'] }}</td>
+        <td class="nowrap">{{ lsp['name'] }}</td>
+        <td>{{ lsp['bandwidth'] }}m</td>
 
-            {% if lsp['output'] != None %}
-              <td>{{ (lsp['output']/1000)|round(2) }}Gbps</td>
-            {% else %}
-              <td>{{ lsp['output'] }}</td>
-            {% endif %}
+        {% if lsp['output'] != None %}
+          <td>{{ (lsp['output']/1000)|round(2) }}Gbps</td>
+        {% else %}
+          <td>{{ lsp['output'] }}</td>
+        {% endif %}
 
-            {% if lsp['rbandwidth'] != None %}
-              <td>{{ lsp['rbandwidth'] }}Mbps/m</td>
-            {% else %}
-              <td>{{ lsp['rbandwidth'] }}</td>
-            {% endif %}
-            <td class="hidden-xs hidden-sm nowrap">to <abbr title="{{ lsp['to'] }}">{{ lsp['to_name'] }}</abbr></td>
-            <td class="hidden-xs hidden-sm">{{ lsp['path'] }}</td>
-            </tr>
-          {% endfor %}
-      </tbody>
-  <tr><td></td></tr>
+        {% if lsp['rbandwidth'] != None %}
+          <td>{{ lsp['rbandwidth'] }}Mbps/m</td>
+        {% else %}
+          <td>{{ lsp['rbandwidth'] }}</td>
+        {% endif %}
+        <td class="hidden-xs hidden-sm nowrap">to <abbr title="{{ lsp['to'] }}">{{ lsp['to_name'] }}</abbr></td>
+        <td class="hidden-xs hidden-sm">{{ lsp['path'] }}</td>
+        </tr>
+      {% endfor %}
+  </tbody>
   {% endfor %}
 </table>
 {% endblock %}

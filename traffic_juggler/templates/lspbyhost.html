@@ -1,5 +1,5 @@
 {% block lspbyhost%}
-<table class="table table-condensed table-hover">
+<table class="table table-hover">
   {% for host in hosts %}
   <thead>
     <tr class="bg-primary">
@@ -7,7 +7,6 @@
     <th class="nowrap">{{ host['name']}}</th>
     <th>{{ host['sumbandwidth'] }}m</th>
     <th>{{ host['sumoutput'] }}Gbps</th>
-
 
     <th colspan="10">~{{ host['rbandwidth']}}Mbps/m</th>
 
@@ -43,7 +42,6 @@
           </tr>
           {% endfor %}
       </tbody>
-  <tr><td></td></tr>
   {% endfor %}
 </table>
 {% endblock %}

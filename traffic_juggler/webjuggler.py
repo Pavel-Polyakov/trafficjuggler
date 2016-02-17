@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
 from TrafficJuggler.builders.dbbuilder import session
 from TrafficJuggler.models.lsp import LSP
 from TrafficJuggler.models.lsplist import LSPList
@@ -8,8 +8,8 @@ from TrafficJuggler.models.host import Host
 from TrafficJuggler.models.image import Image
 from TrafficJuggler.parser import Parser
 from TrafficJuggler.builders.imagebuilder import ImageBuilder
-
 from pytz import timezone
+
 app = Flask(__name__)
 
 
@@ -49,7 +49,7 @@ def index():
 @app.route('/update')
 def update():
     rb.parse()
-    return render_template('update.html')
+    return redirect('/')
 
 def getLastParse():
     last_parse = session.query(Image).all()[-1].time
@@ -78,5 +78,5 @@ if __name__ == '__main__':
     app.run(
 #        host = "127.0.0.1",
         host = "0.0.0.0",
-        debug = True
+        debug = False
     )
