@@ -1,47 +1,26 @@
-{% block lspbyhost%}
+{% block lspbyhost %}
 <table class="table table-hover">
   {% for host in hosts %}
   <thead>
     <tr class="bg-primary">
-    <th>{{ host['ip'] }}</th>
-    <th class="nowrap">{{ host['name']}}</th>
-    <th>{{ host['sumbandwidth'] }}m</th>
-    <th>{{ host['sumoutput'] }}Gbps</th>
-
-    <th colspan="10">~{{ host['rbandwidth']}}Mbps/m</th>
-
-  </tr>
+      <!-- IP -->
+      <th>{{ host['ip'] }}</th>
+      <!-- NAME -->
+      <th class="nowrap">{{ host['name']}}</th>
+      <!-- SUMMARY BANDWIDTH -->
+      <th>{{ host['sumbandwidth'] }}m</th>
+      <!-- SUMMARY OUTPUT -->
+      <th>{{ host['sumoutput'] }}Gbps</th>
+      <!-- RBANWIDTH -->
+      <th colspan="10" class="hidden-xs hidden-sm">~{{ host['rbandwidth']}}Mbps/m</th>
+    </tr>
   </thead>
-      <tbody id="tablebody" class="collapse in">
-          {% for lsp in host['lsplist']%}
-          {% if lsp['state'] == 'Dn' %}
-            <tr class="danger">
-          {% elif lsp['state'] == 'Inactive' %}
-            <tr class="info">
-          {% else %}
-            <tr>
-          {% endif %}
-          <td>{{ lsp['state'] }}</td>
-          <td class="nowrap">{{ lsp['name'] }}</td>
-          <td>{{ lsp['bandwidth'] }}m</td>
-
-          {% if lsp['output'] != None %}
-            <td>{{ lsp['output'] }}Mbps</td>
-          {% else %}
-            <td>{{ lsp['output'] }}</td>
-          {% endif %}
-
-          {% if lsp['rbandwidth'] != None %}
-            <td>{{ lsp['rbandwidth'] }}Mbps/m</td>
-          {% else %}
-            <td>{{ lsp['rbandwidth'] }}</td>
-          {% endif %}
-
-          <td class="hidden-xs hidden-sm nowrap">to <abbr title="{{ lsp['to'] }}">{{ lsp['to_name'] }}</abbr></td>
-          <td class="hidden-xs hidden-sm">{{ lsp['path'] }}</td>
-          </tr>
-          {% endfor %}
-      </tbody>
+  <!-- LSPS -->
+  <tbody id="tablebody" class="collapse in">
+      {% for lsp in host['lsplist']%}
+      {% include 'lsp.html' %}
+      {% endfor %}
+  </tbody>
   {% endfor %}
 </table>
 {% endblock %}

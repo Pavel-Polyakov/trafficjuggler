@@ -1,0 +1,33 @@
+{% block lsp %}
+<!-- ROW COLOR -->
+{% if lsp['state'] == 'Dn' %}
+  <tr class="danger">
+{% elif lsp['state'] == 'Inactive' %}
+  <tr class="info">
+{% else %}
+  <tr>
+{% endif %}
+  <!-- STATE -->
+  <td>{{ lsp['state'] }}</td>
+  <!-- NAME -->
+  <td class="nowrap">{{ lsp['name'] }}</td>
+  <!-- BANDWIDTH -->
+  <td>{{ lsp['bandwidth'] }}m</td>
+  <!-- OUTPUT -->
+  {% if lsp['output'] != None %}
+    <td>{{ (lsp['output']/1000)|round(2) }}Gbps</td>
+  {% else %}
+    <td>{{ lsp['output'] }}</td>
+  {% endif %}
+  <!-- RBANWIDTH -->
+  {% if lsp['rbandwidth'] != None %}
+    <td class="hidden-xs hidden-sm">{{ lsp['rbandwidth'] }}Mbps/m</td>
+  {% else %}
+    <td class="hidden-xs hidden-sm">{{ lsp['rbandwidth'] }}</td>
+  {% endif %}
+  <!-- TO -->
+  <td class="hidden-xs hidden-sm nowrap">to <abbr title="{{ lsp['to'] }}">{{ lsp['to_name'] }}</abbr></td>
+  <!-- PATH -->
+  <td class="hidden-xs hidden-sm">{{ lsp['path'] }}</td>
+</tr>
+{% endblock %}
