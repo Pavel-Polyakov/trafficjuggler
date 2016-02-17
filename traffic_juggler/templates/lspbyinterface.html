@@ -1,5 +1,5 @@
 {% block lspbyinterface %}
-<table class="table table-hover">
+<table class="table table-hover table-condensed">
   {% for interface in interfaces %}
   <thead>
     <!-- ROW COLOR -->
@@ -9,9 +9,7 @@
       <tr class="bg-primary">
     {% endif %}
     <!-- NAME -->
-    <th class="nowrap">{{ interface['name'] }}</th>
-    <!-- DESCRIPTION -->
-    <th class="nowrap">{{ interface['description'] }}</th>
+    <th class="nowrap">{{ interface['name'] }} | {{ interface['description'] }}</th>
     <!-- SPEED -->
     <th>{{ (interface['speed']/1000)|int }}Gbps</th>
     <!-- OUTPUT -->

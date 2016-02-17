@@ -1,12 +1,10 @@
 {% block lspbyhost %}
-<table class="table table-hover">
+<table class="table table-hover table-condensed">
   {% for host in hosts %}
   <thead>
     <tr class="bg-primary">
       <!-- IP -->
-      <th>{{ host['ip'] }}</th>
-      <!-- NAME -->
-      <th class="nowrap">{{ host['name']}}</th>
+      <th class="nowrap">{{ host['ip'] }} | {{ host['name']}}</th>
       <!-- SUMMARY BANDWIDTH -->
       <th>{{ host['sumbandwidth'] }}m</th>
       <!-- SUMMARY OUTPUT -->
