@@ -1,17 +1,20 @@
-from Exscript.util.interact import read_login
+from Exscript import Account
 from Exscript.protocols import SSH2
+from TrafficJuggler import config
 from lxml import etree
 import re
+import sys
+
 
 class Executor(object):
-    def __init__(self,host):
+    def __init__(self, host):
         self.__create__(host)
 
-    def getXMLByCommand(self,command):
+    def getXMLByCommand(self, command):
         self.conn.execute('%s | display xml | no-more' % command)
         output = self.conn.response
-        rpc = re.sub('^(.|\r|\r\n)*(?=<rpc-reply)|(?<=<\/rpc-reply>)(.|\r|\r\n)*$','',output)
-        rpc = re.sub('xmlns="','xmlns:junos="',rpc)
+        rpc = re.sub('^(.|\r|\r\n)*(?=<rpc-reply)|(?<=<\/rpc-reply>)(.|\r|\r\n)*$', '', output)
+        rpc = re.sub('xmlns="', 'xmlns:junos="', rpc)
         tree = etree.fromstring(rpc)
         return tree
 
@@ -20,14 +23,14 @@ class Executor(object):
         self.conn.send('exit\r')
         self.conn.close()
 
-    def __create__(self,host):
-        account = read_login()
+    def __create__(self, host):
+        account = Account(name=config.username, password=config.password)
         self.name = host
         self.conn = SSH2()
         if self.conn.connect(host):
             print 'Connected'
             self.conn.login(account)
-            self.conn.execute('cli')
+          #  self.conn.execute('cli')
         else:
             print 'Does not connected. Please check your input'
             sys.exit()

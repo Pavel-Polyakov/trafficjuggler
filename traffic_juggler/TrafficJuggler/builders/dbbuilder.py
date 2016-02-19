@@ -7,7 +7,8 @@ from TrafficJuggler.models.prefix import Prefix
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
-engine = create_engine('sqlite:///tj.db')
+FULL_PATH = '/Users/woolly/anaconda/envs/tj/apps/traffic_juggler/'
+engine = create_engine('sqlite:///{path}tj.db'.format(path=FULL_PATH))
 Base.metadata.bind = engine
 Base.metadata.create_all(engine)
 

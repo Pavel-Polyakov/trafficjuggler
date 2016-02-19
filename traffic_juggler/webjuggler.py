@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, redirect
-from TrafficJuggler.builders.dbbuilder import session
+from flask import Flask, render_template, redirect
+from flask_sqlalchemy import SQLAlchemy
 from TrafficJuggler.models.lsp import LSP
 from TrafficJuggler.models.lsplist import LSPList
 from TrafficJuggler.models.interface import Interface
@@ -9,9 +9,17 @@ from TrafficJuggler.models.image import Image
 from TrafficJuggler.parser import Parser
 from TrafficJuggler.builders.imagebuilder import ImageBuilder
 from pytz import timezone
+from sqlalchemy.orm import sessionmaker
+import logging, sys
+
+FULL_PATH = '/Users/woolly/anaconda/envs/tj/apps/traffic_juggler/'
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{path}tj.db'.format(path=FULL_PATH)
+db = SQLAlchemy(app)
+session = db.session
 
+logging.basicConfig(stream=sys.stderr)
 
 @app.route('/')
 def index():
@@ -48,6 +56,9 @@ def index():
 
 @app.route('/update')
 def update():
+    HOST = 'm9-r0'
+    parser = Parser(HOST)
+    rb = ImageBuilder(HOST, session, parser)
     rb.parse()
     return redirect('/')
 
@@ -78,5 +89,5 @@ if __name__ == '__main__':
     app.run(
 #        host = "127.0.0.1",
         host = "0.0.0.0",
-        debug = False
+        debug = True
     )

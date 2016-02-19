@@ -152,7 +152,7 @@ class Parser(object):
         result['time'] = stat_time
         return result
 
-    def __get_lsp_stat_list__(self,accuracy=5,latency=2):
+    def __get_lsp_stat_list__(self,accuracy=5,latency=5):
         result = []
         for x in xrange(0,accuracy):
             result.append(self.__get_lsp_output_stat__())
