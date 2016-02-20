@@ -82,6 +82,9 @@ def plot(key):
             all()
     x = [k[1] for k in xy]
     y = [k[0] for k in xy]
+    for yv in y:
+        if str(yv) == 'None':
+            y[y.index(yv)] = 0
     x = map(lambda k: k + timedelta(hours=3), x)
     x_unixtime = map(lambda k: time.mktime(k.timetuple()), x)
     xy_smooth = lowess(y, x_unixtime, frac = 0.025)
@@ -90,7 +93,7 @@ def plot(key):
     fig = Figure(figsize=(16,6), dpi=80)
     fig.autofmt_xdate()
     fig.set_facecolor('white')
-    
+
     axis = fig.add_subplot(1, 1, 1)
     axis.xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
     axis.xaxis.set_major_locator(dates.HourLocator(byhour=range(0,24,1)))
@@ -100,7 +103,8 @@ def plot(key):
     axis.set_title(key)
     axis.set_ylabel('LSP Output, MBps')
     axis.set_xlabel('%s - %s' % (x[0],x[-1]))
-    
+    axis.set_ylim(bottom=0)
+
     canvas = FigureCanvas(fig)
     output = StringIO.StringIO()
     canvas.print_png(output)
