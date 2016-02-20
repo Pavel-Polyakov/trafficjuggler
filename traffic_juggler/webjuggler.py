@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect
+from flask import Flask, render_template, redirect, make_response
 from flask_sqlalchemy import SQLAlchemy
 from TrafficJuggler.models.lsp import LSP
 from TrafficJuggler.models.lsplist import LSPList
@@ -12,7 +12,18 @@ from pytz import timezone
 from sqlalchemy.orm import sessionmaker
 import logging, sys
 
-FULL_PATH = '/Users/woolly/anaconda/envs/tj/apps/traffic_juggler/'
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
+from matplotlib import pyplot as PLT
+from matplotlib import dates
+from statsmodels.nonparametric.smoothers_lowess import lowess
+
+import StringIO
+import time
+import datetime
+from datetime import date, timedelta, datetime
+
+from TrafficJuggler.config import FULL_PATH
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{path}tj.db'.format(path=FULL_PATH)
@@ -62,6 +73,41 @@ def update():
     rb.parse()
     return redirect('/')
 
+@app.route('/<key>.png')
+def plot(key):
+    xy = session.query(LSP.output, Image.time).\
+            filter(LSP.name == key).\
+            filter(LSP.image_id == Image.id).\
+            filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).\
+            all()
+    x = [k[1] for k in xy]
+    y = [k[0] for k in xy]
+    x = map(lambda k: k + timedelta(hours=3), x)
+    x_unixtime = map(lambda k: time.mktime(k.timetuple()), x)
+    xy_smooth = lowess(y, x_unixtime, frac = 0.025)
+    y_smooth = xy_smooth[:,1]
+
+    fig = Figure(figsize=(16,6), dpi=80)
+    fig.autofmt_xdate()
+    fig.set_facecolor('white')
+    
+    axis = fig.add_subplot(1, 1, 1)
+    axis.xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
+    axis.xaxis.set_major_locator(dates.HourLocator(byhour=range(0,24,1)))
+    axis.plot(x, y_smooth, color='#337AB7')
+    axis.fill_between(x,y_smooth, facecolor='#337AB7')
+    axis.grid(True)
+    axis.set_title(key)
+    axis.set_ylabel('LSP Output, MBps')
+    axis.set_xlabel('%s - %s' % (x[0],x[-1]))
+    
+    canvas = FigureCanvas(fig)
+    output = StringIO.StringIO()
+    canvas.print_png(output)
+    response = make_response(output.getvalue())
+    response.mimetype = 'image/png'
+    return response
+
 def getLastParse():
     last_parse = session.query(Image).all()[-1].time
     utc = timezone('UTC')
@@ -82,9 +128,6 @@ def getInterfaceListByImageId(id):
 
 
 if __name__ == '__main__':
-    HOST = 'm9-r0'
-    parser = Parser(HOST)
-    rb = ImageBuilder(HOST, session, parser)
 
     app.run(
 #        host = "127.0.0.1",

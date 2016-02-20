@@ -4,8 +4,8 @@ from TrafficJuggler.builders.imagebuilder import ImageBuilder
 from TrafficJuggler.parser import Parser
 from time import strftime, sleep
 import logging, sys
+from TrafficJuggler.config import FULL_PATH
 
-FULL_PATH = '/Users/woolly/anaconda/envs/tj/apps/traffic_juggler/'
 HOST = 'm9-r0'
 
 logging.basicConfig(stream=sys.stdout)
