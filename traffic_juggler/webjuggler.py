@@ -75,12 +75,12 @@ def update():
 
 @app.route('/lsp/<key>.png')
 def plot_lsp(key):
-    response = getGraph(LSP, key)
+    response = getGraph(LSP, LSP.name, key)
     return response
 
 @app.route('/interface/<key>.png')
 def plot_interface(key):
-    response = getGraph(Interface, key)
+    response = getGraph(Interface, Interface.description, key)
     return response
 
 def getLastParse():
@@ -101,9 +101,9 @@ def getInterfaceListByImageId(id):
     interfacelist.extend(interfacelist_frombase)
     return interfacelist
 
-def getGraph(Type, key):
+def getGraph(Type, Type_key, key):
     xy = session.query(Type.output, Image.time).\
-            filter(Type.name == key).\
+            filter(Type_key == key).\
             filter(Type.image_id == Image.id).\
             filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).\
             all()
