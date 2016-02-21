@@ -13,7 +13,15 @@
     <!-- SPEED -->
     <th>{{ (interface['speed']/1000)|int }}Gbps</th>
     <!-- OUTPUT -->
-    <th>{{ (interface['output']/1000)|round(2) }}Gbps</th>
+    <th>
+      <a id="show_graph"  data-rel="{{ interface['name'] }}"
+                          data-type="interface"
+                          data-output="{{ interface['output'] }} MBps"
+                          data-description="{{ interface['description'] }}"
+                          style="color: white;">
+        {{ (interface['output']/1000)|round(2) }}Gbps
+      </a>
+    </th>
     <!-- UTILIZATION -->
     <th class="hidden-xs hidden-sm">
       <div class="progress">

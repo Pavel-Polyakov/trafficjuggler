@@ -73,11 +73,38 @@ def update():
     rb.parse()
     return redirect('/')
 
-@app.route('/<key>.png')
-def plot(key):
-    xy = session.query(LSP.output, Image.time).\
-            filter(LSP.name == key).\
-            filter(LSP.image_id == Image.id).\
+@app.route('/lsp/<key>.png')
+def plot_lsp(key):
+    response = getGraph(LSP, key)
+    return response
+
+@app.route('/interface/<key>.png')
+def plot_interface(key):
+    response = getGraph(Interface, key)
+    return response
+
+def getLastParse():
+    last_parse = session.query(Image).all()[-1].time
+    utc = timezone('UTC')
+    mow = timezone('Europe/Moscow')
+    return utc.localize(last_parse).astimezone(mow).ctime()
+
+def getLSPListByImageId(id):
+    lsplist_frombase = session.query(LSP).filter(LSP.image_id == id).all()
+    lsplist = LSPList()
+    lsplist.extend(lsplist_frombase)
+    return lsplist
+
+def getInterfaceListByImageId(id):
+    interfacelist_frombase = session.query(Interface).filter(Interface.image_id == id).all()
+    interfacelist = InterfaceList()
+    interfacelist.extend(interfacelist_frombase)
+    return interfacelist
+
+def getGraph(Type, key):
+    xy = session.query(Type.output, Image.time).\
+            filter(Type.name == key).\
+            filter(Type.image_id == Image.id).\
             filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).\
             all()
     x = [k[1] for k in xy]
@@ -100,9 +127,9 @@ def plot(key):
     axis.plot(x, y_smooth, color='#337AB7')
     axis.fill_between(x,y_smooth, facecolor='#337AB7')
     axis.grid(True)
-    axis.set_title(key)
+    # axis.set_title(key)
     axis.set_ylabel('LSP Output, MBps')
-    axis.set_xlabel('%s - %s' % (x[0],x[-1]))
+    axis.set_xlabel('\n%s - %s' % (x[0],x[-1]))
     axis.set_ylim(bottom=0)
 
     canvas = FigureCanvas(fig)
@@ -111,25 +138,6 @@ def plot(key):
     response = make_response(output.getvalue())
     response.mimetype = 'image/png'
     return response
-
-def getLastParse():
-    last_parse = session.query(Image).all()[-1].time
-    utc = timezone('UTC')
-    mow = timezone('Europe/Moscow')
-    return utc.localize(last_parse).astimezone(mow).ctime()
-
-def getLSPListByImageId(id):
-    lsplist_frombase = session.query(LSP).filter(LSP.image_id == id).all()
-    lsplist = LSPList()
-    lsplist.extend(lsplist_frombase)
-    return lsplist
-
-def getInterfaceListByImageId(id):
-    interfacelist_frombase = session.query(Interface).filter(Interface.image_id == id).all()
-    interfacelist = InterfaceList()
-    interfacelist.extend(interfacelist_frombase)
-    return interfacelist
-
 
 if __name__ == '__main__':
 

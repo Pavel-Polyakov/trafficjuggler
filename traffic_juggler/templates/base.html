@@ -4,9 +4,24 @@
   <link href="/static/css/custom.css" rel="stylesheet">
   <script src="http://code.jquery.com/jquery-latest.js"></script>
   <script src="/static/js/bootstrap.min.js"></script>
+  <script src="/static/js/custom.js"></script>
   <meta name="viewport" content="width=device-width, user-scalable=no">
 </head>
 
 <body>
+  <div class="modal fade" id="info" role="dialog">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-body">
+          <div id="area" data-dismiss="modal">
+              <h2 id="graph_header" class="text-center"></h2>
+              <h4 id="graph_description" class="text-center"></h4>
+              <h4 id="graph_output" class="text-center"></h4>
+              <img src="" id="graph">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
   {% block content %}{% endblock %}
 </body>

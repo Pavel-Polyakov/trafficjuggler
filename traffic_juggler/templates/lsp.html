@@ -12,11 +12,18 @@
   <!-- BANDWIDTH -->
   <td>{{ lsp['bandwidth'] }}m</td>
   <!-- OUTPUT -->
-  {% if lsp['output'] != None %}
-    <td>{{ (lsp['output']/1000)|round(2) }}Gbps</td>
-  {% else %}
-    <td>{{ lsp['output'] }}</td>
-  {% endif %}
+  <td>
+    <a id="show_graph"  data-rel="{{ lsp['name']}}"
+                        data-type="lsp"
+                        data-output="{{ lsp['output'] }} Mbps"
+                        data-description="">
+    {% if lsp['output'] != None %}
+      {{ (lsp['output']/1000)|round(2) }}Gbps
+    {% else %}
+      {{ lsp['output'] }}
+    {% endif %}
+    </a>
+  </td>
   <!-- RBANWIDTH -->
   {% if lsp['rbandwidth'] != None %}
     <td class="hidden-xs hidden-sm">{{ lsp['rbandwidth'] }}Mbps/m</td>
