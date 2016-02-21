@@ -48,7 +48,7 @@ def index():
         ip = host['ip']
         host['name'] = next(x.name for x in neighbors if x.ip == ip)
         host['sumbandwidth'] = str(lsplist.getLSPByHost(ip).getSumBandwidth())
-        host['sumoutput'] = lsplist.getLSPByHost(ip).getSumOutputGbps()
+        host['sumoutput'] = lsplist.getLSPByHost(ip).getSumOutput()
         host['rbandwidth'] = str(lsplist.getAverageRBandwidthByHost(ip))
         host['lsplist'] = [x.__dict__ for x in lsplist.getLSPByHost(ip).sortByOutput()]
 
@@ -75,12 +75,17 @@ def update():
 
 @app.route('/lsp/<key>.png')
 def plot_lsp(key):
-    response = getGraph(LSP, LSP.name, key)
+    response = getGraphLSPOutput(key)
     return response
 
 @app.route('/interface/<key>.png')
 def plot_interface(key):
-    response = getGraph(Interface, Interface.description, key)
+    response = getGraphInterfaceOutput(key)
+    return response
+
+@app.route('/host/<key>.png')
+def plot_host(key):
+    response = getGraphHostOutput(key)
     return response
 
 def getLastParse():
@@ -101,10 +106,22 @@ def getInterfaceListByImageId(id):
     interfacelist.extend(interfacelist_frombase)
     return interfacelist
 
-def getGraph(Type, Type_key, key):
-    xy = session.query(Type.output, Image.time).\
-            filter(Type_key == key).\
-            filter(Type.image_id == Image.id).\
+def getGraphHostOutput(HostIp):
+    images = session.query(Image).\
+            filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).all()
+    x = [k.time for k in images]
+    HostOutput = []
+    for image in images:
+        lsplist = getLSPListByImageId(image.id)
+        output = lsplist.getLSPByHost(HostIp).getSumOutput()
+        HostOutput.append(output)
+    y = HostOutput
+    return getGraph(x,y)
+
+def getGraphLSPOutput(LSPName):
+    xy = session.query(LSP.output, Image.time).\
+            filter(LSP.name == LSPName).\
+            filter(LSP.image_id == Image.id).\
             filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).\
             all()
     x = [k[1] for k in xy]
@@ -112,32 +129,73 @@ def getGraph(Type, Type_key, key):
     for yv in y:
         if str(yv) == 'None':
             y[y.index(yv)] = 0
-    x = map(lambda k: k + timedelta(hours=3), x)
-    x_unixtime = map(lambda k: time.mktime(k.timetuple()), x)
-    xy_smooth = lowess(y, x_unixtime, frac = 0.025)
-    y_smooth = xy_smooth[:,1]
+    return getGraph(x,y)
 
+def getGraphInterfaceOutput(InterfaceDescription):
+    xy = session.query(Interface.output, Image.time).\
+            filter(Interface.description == InterfaceDescription).\
+            filter(Interface.image_id == Image.id).\
+            filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).\
+            all()
+    x = [k[1] for k in xy]
+    y = [k[0] for k in xy]
+    for yv in y:
+        if str(yv) == 'None':
+            y[y.index(yv)] = 0
+    return getGraph(x,y)
+
+def getGraphToOutput(HostName):
+    xy = session.query(Interface.output, Image.time).\
+            filter(Interface.description == InterfaceDescription).\
+            filter(Interface.image_id == Image.id).\
+            filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).\
+            all()
+    x = [k[1] for k in xy]
+    y = [k[0] for k in xy]
+    for yv in y:
+        if str(yv) == 'None':
+            y[y.index(yv)] = 0
+    return getGraph(x,y)
+
+def getGraph(x,y):
+    x = setXToMOWTime(x)
+    x_smooth,y_smooth = smoothXY(x,y,frac = 0.02)
+    fig = getFigureByXY(x,y_smooth)
+    response = makeImageResponseFromFigure(fig)
+    return response
+
+def getFigureByXY(x,y, ylabel='\nOutput, MBps'):
     fig = Figure(figsize=(16,6), dpi=80)
-    fig.autofmt_xdate()
-    fig.set_facecolor('white')
-
     axis = fig.add_subplot(1, 1, 1)
+    axis.plot(x, y, color='#337AB7')
+    axis.fill_between(x,y, facecolor='#337AB7')
+    axis.grid(True)
+    axis.set_ylim(bottom=0)
+    axis.set_ylabel(ylabel)
+#    axis.set_xlabel('\n%s - %s' % (x[0],x[-1]))
     axis.xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
     axis.xaxis.set_major_locator(dates.HourLocator(byhour=range(0,24,1)))
-    axis.plot(x, y_smooth, color='#337AB7')
-    axis.fill_between(x,y_smooth, facecolor='#337AB7')
-    axis.grid(True)
-    # axis.set_title(key)
-    axis.set_ylabel('LSP Output, MBps')
-    axis.set_xlabel('\n%s - %s' % (x[0],x[-1]))
-    axis.set_ylim(bottom=0)
+    fig.autofmt_xdate()
+    fig.set_facecolor('white')
+    return fig
 
+def smoothXY(x,y,frac = 0.025):
+    x_unixtime = map(lambda k: time.mktime(k.timetuple()), x)
+    xy_smooth = lowess(y, x_unixtime, frac = frac)
+    y_smooth = xy_smooth[:,1]
+    x_smooth = xy_smooth[:,0]
+    return x_smooth,y_smooth
+
+def makeImageResponseFromFigure(fig):
     canvas = FigureCanvas(fig)
     output = StringIO.StringIO()
     canvas.print_png(output)
     response = make_response(output.getvalue())
     response.mimetype = 'image/png'
     return response
+
+def setXToMOWTime(x):
+    return map(lambda k: k + timedelta(hours=3), x)
 
 if __name__ == '__main__':
 

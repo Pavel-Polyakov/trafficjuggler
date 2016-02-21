@@ -8,7 +8,15 @@
       <!-- SUMMARY BANDWIDTH -->
       <th>{{ host['sumbandwidth'] }}m</th>
       <!-- SUMMARY OUTPUT -->
-      <th>{{ host['sumoutput'] }}Gbps</th>
+      <th>
+        <a id="show_graph"  data-rel="{{ host['ip'] }}"
+                            data-type="host"
+                            data-output="{{ host['sumoutput'] }} MBps"
+                            data-description="{{ host['name'] }}"
+                            style="color: white;">
+          {{ (host['sumoutput']/1000)|round(2) }}Gbps
+        </a>
+      </th>
       <!-- RBANWIDTH -->
       <th colspan="10" class="hidden-xs hidden-sm">~{{ host['rbandwidth']}}Mbps/m</th>
     </tr>
