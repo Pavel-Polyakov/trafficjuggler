@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, make_response
+from flask import Flask, render_template, redirect
 from flask_sqlalchemy import SQLAlchemy
 from TrafficJuggler.models.lsp import LSP
 from TrafficJuggler.models.lsplist import LSPList
@@ -8,21 +8,12 @@ from TrafficJuggler.models.host import Host
 from TrafficJuggler.models.image import Image
 from TrafficJuggler.parser import Parser
 from TrafficJuggler.builders.imagebuilder import ImageBuilder
+from plotter import getGraph
 from pytz import timezone
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import func
 import logging, sys
-
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
-from matplotlib import pyplot as PLT
-from matplotlib import dates
-from statsmodels.nonparametric.smoothers_lowess import lowess
-
-import StringIO
-import time
-import datetime
-from datetime import date, timedelta, datetime
-
+from datetime import datetime, timedelta
 from TrafficJuggler.config import FULL_PATH
 
 app = Flask(__name__)
@@ -34,36 +25,17 @@ logging.basicConfig(stream=sys.stderr)
 
 @app.route('/')
 def index():
-    neighbors = session.query(Host).all()
-    last_image_id = session.query(Image).all()[-1].id
-    last_parse = getLastParse()
-    lsplist = getLSPListByImageId(last_image_id)
-    interfacelist = getInterfaceListByImageId(last_image_id)
+    last_parse = session.query(Image).all()[-1]
+    last_parse_id = last_parse.id
+    last_parse_time = setMowTime(last_parse.time)
 
-    for l in lsplist:
-       l.to_name = next(x.name for x in neighbors if x.ip == l.to)
-
-    hosts = [{'ip': x} for x in lsplist.getAllHostsSortedByOutput()]
-    for host in hosts:
-        ip = host['ip']
-        host['name'] = next(x.name for x in neighbors if x.ip == ip)
-        host['sumbandwidth'] = str(lsplist.getLSPByHost(ip).getSumBandwidth())
-        host['sumoutput'] = lsplist.getLSPByHost(ip).getSumOutput()
-        host['rbandwidth'] = str(lsplist.getAverageRBandwidthByHost(ip))
-        host['lsplist'] = [x.__dict__ for x in lsplist.getLSPByHost(ip).sortByOutput()]
-
-    interfaces = [x.__dict__ for x in interfacelist.sortByOutput()]
-    for interface in interfaces:
-        interface['lsplist'] = [x.__dict__ for x in lsplist.getLSPByInterfaceId(interface['id']).sortByOutput()]
-        interface['rsvpout'] = lsplist.getLSPByInterfaceId(interface['id']).getSumOutput()
-        interface['ldpout'] = interface['output'] - interface['rsvpout']
-        if interface['ldpout'] < 100:
-            interface['ldpout'] = 0
+    hosts = getHostsByImageId(last_parse_id)
+    interfaces = getInterfacesByImageId(last_parse_id)
 
     return render_template('index.html',
                             interfaces=interfaces,
                             hosts=hosts,
-                            last_parse=last_parse)
+                            last_parse=last_parse_time)
 
 @app.route('/update')
 def update():
@@ -75,127 +47,89 @@ def update():
 
 @app.route('/lsp/<key>.png')
 def plot_lsp(key):
-    response = getGraphLSPOutput(key)
-    return response
-
-@app.route('/interface/<key>.png')
-def plot_interface(key):
-    response = getGraphInterfaceOutput(key)
-    return response
-
-@app.route('/host/<key>.png')
-def plot_host(key):
-    response = getGraphHostOutput(key)
-    return response
-
-def getLastParse():
-    last_parse = session.query(Image).all()[-1].time
-    utc = timezone('UTC')
-    mow = timezone('Europe/Moscow')
-    return utc.localize(last_parse).astimezone(mow).ctime()
-
-def getLSPListByImageId(id):
-    lsplist_frombase = session.query(LSP).filter(LSP.image_id == id).all()
-    lsplist = LSPList()
-    lsplist.extend(lsplist_frombase)
-    return lsplist
-
-def getInterfaceListByImageId(id):
-    interfacelist_frombase = session.query(Interface).filter(Interface.image_id == id).all()
-    interfacelist = InterfaceList()
-    interfacelist.extend(interfacelist_frombase)
-    return interfacelist
-
-def getGraphHostOutput(HostIp):
-    images = session.query(Image).\
-            filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).all()
-    x = [k.time for k in images]
-    HostOutput = []
-    for image in images:
-        lsplist = getLSPListByImageId(image.id)
-        output = lsplist.getLSPByHost(HostIp).getSumOutput()
-        HostOutput.append(output)
-    y = HostOutput
-    return getGraph(x,y)
-
-def getGraphLSPOutput(LSPName):
     xy = session.query(LSP.output, Image.time).\
-            filter(LSP.name == LSPName).\
+            filter(LSP.name == key).\
             filter(LSP.image_id == Image.id).\
             filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).\
             all()
     x = [k[1] for k in xy]
+    x = map(setMowTime,x)
     y = [k[0] for k in xy]
-    for yv in y:
-        if str(yv) == 'None':
-            y[y.index(yv)] = 0
+    y = [0 if k == None else k for k in y]
     return getGraph(x,y)
 
-def getGraphInterfaceOutput(InterfaceDescription):
+@app.route('/interface/<key>.png')
+def plot_interface(key):
     xy = session.query(Interface.output, Image.time).\
-            filter(Interface.description == InterfaceDescription).\
+            filter(Interface.description == key).\
             filter(Interface.image_id == Image.id).\
             filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).\
             all()
     x = [k[1] for k in xy]
+    x = map(setMowTime,x)
     y = [k[0] for k in xy]
-    for yv in y:
-        if str(yv) == 'None':
-            y[y.index(yv)] = 0
+    y = [0 if k == None else k for k in y]
     return getGraph(x,y)
 
-def getGraphToOutput(HostName):
-    xy = session.query(Interface.output, Image.time).\
-            filter(Interface.description == InterfaceDescription).\
-            filter(Interface.image_id == Image.id).\
-            filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).\
-            all()
-    x = [k[1] for k in xy]
-    y = [k[0] for k in xy]
-    for yv in y:
-        if str(yv) == 'None':
-            y[y.index(yv)] = 0
+@app.route('/host/<key>.png')
+def plot_host(key):
+    images = session.query(Image).\
+            filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).all()
+    x = [k.time for k in images]
+    x = map(setMowTime,x)
+    HostOutput = []
+    for image in images:
+        output = session.query(func.sum(LSP.output)).\
+                filter(LSP.image_id == image.id).\
+                filter(LSP.to == key).scalar()
+        HostOutput.append(output)
+    y = HostOutput
     return getGraph(x,y)
 
-def getGraph(x,y):
-    x = setXToMOWTime(x)
-    x_smooth,y_smooth = smoothXY(x,y,frac = 0.02)
-    fig = getFigureByXY(x,y_smooth)
-    response = makeImageResponseFromFigure(fig)
-    return response
+def getHostsByImageId(id):
+    hosts = session.query(Host).\
+                            filter(Host.ip == LSP.to).\
+                            filter(LSP.image_id == id).\
+                            distinct(LSP.to).all()
+    for host in hosts:
+        query = session.query(LSP).\
+                                filter(LSP.image_id == id).\
+                                filter(LSP.to == host.ip)
+        lsplist = query.cte()
+        host.lsplist = session.query(lsplist, Host.name.label('to_name')).\
+                                filter(lsplist.c.to == Host.ip).\
+                                order_by(lsplist.c.output.desc()).all()
+        subq_b = session.query(func.sum(lsplist.c.bandwidth).label('sumbandwidth')).subquery()
+        subq_o = session.query(func.sum(lsplist.c.output).label('sumoutput')).subquery()
+        subq_r = session.query(func.avg(lsplist.c.rbandwidth).label('rbandwidth')).subquery()
+        host.sumbandwidth,host.sumoutput,host.rbandwidth = \
+                                session.query(subq_b.c.sumbandwidth,
+                                subq_o.c.sumoutput,
+                                subq_r.c.rbandwidth).first()
+        host.rbandwidth = round(host.rbandwidth,2)
+    hosts = sorted(hosts, key = lambda x: x.sumoutput, reverse = True)
+    return hosts
 
-def getFigureByXY(x,y, ylabel='\nOutput, MBps'):
-    fig = Figure(figsize=(16,6), dpi=80)
-    axis = fig.add_subplot(1, 1, 1)
-    axis.plot(x, y, color='#337AB7')
-    axis.fill_between(x,y, facecolor='#337AB7')
-    axis.grid(True)
-    axis.set_ylim(bottom=0)
-    axis.set_ylabel(ylabel)
-#    axis.set_xlabel('\n%s - %s' % (x[0],x[-1]))
-    axis.xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
-    axis.xaxis.set_major_locator(dates.HourLocator(byhour=range(0,24,1)))
-    fig.autofmt_xdate()
-    fig.set_facecolor('white')
-    return fig
+def getInterfacesByImageId(id):
+    interfaces = session.query(Interface).\
+                    filter(Interface.image_id == id).all()
+    for interface in interfaces:
+        query = session.query(LSP).\
+                        filter(LSP.image_id == id).\
+                        filter(LSP.interface_id == interface.id)
+        lsplist = query.cte()
+        interface.lsplist = session.query(lsplist, Host.name.label('to_name')).\
+                        filter(lsplist.c.to == Host.ip).\
+                        order_by(lsplist.c.output.desc()).all()
+        interface.rsvpout = session.query(func.sum(lsplist.c.output)).scalar()
+        interface.ldpout = interface.output - interface.rsvpout
+        if interface.ldpout < 100:
+            interface.ldpout = 0
+    interfaces = sorted(interfaces, key = lambda x: x.output, reverse = True)
+    return interfaces
 
-def smoothXY(x,y,frac = 0.025):
-    x_unixtime = map(lambda k: time.mktime(k.timetuple()), x)
-    xy_smooth = lowess(y, x_unixtime, frac = frac)
-    y_smooth = xy_smooth[:,1]
-    x_smooth = xy_smooth[:,0]
-    return x_smooth,y_smooth
-
-def makeImageResponseFromFigure(fig):
-    canvas = FigureCanvas(fig)
-    output = StringIO.StringIO()
-    canvas.print_png(output)
-    response = make_response(output.getvalue())
-    response.mimetype = 'image/png'
-    return response
-
-def setXToMOWTime(x):
-    return map(lambda k: k + timedelta(hours=3), x)
+def setMowTime(x):
+    return x + timedelta(hours=3)
 
 if __name__ == '__main__':
 

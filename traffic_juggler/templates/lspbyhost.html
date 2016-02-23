@@ -4,26 +4,26 @@
   <thead>
     <tr class="bg-primary">
       <!-- IP -->
-      <th class="nowrap">{{ host['ip'] }} | {{ host['name']}}</th>
+      <th class="nowrap">{{ host.ip }} | {{ host.name}}</th>
       <!-- SUMMARY BANDWIDTH -->
-      <th>{{ host['sumbandwidth'] }}m</th>
+      <th>{{ host.sumbandwidth }}m</th>
       <!-- SUMMARY OUTPUT -->
       <th>
-        <a id="show_graph"  data-rel="{{ host['ip'] }}"
+        <a id="show_graph"  data-rel="{{ host.ip }}"
                             data-type="host"
-                            data-output="{{ host['sumoutput'] }} MBps"
-                            data-description="{{ host['name'] }}"
+                            data-output="{{ host.sumoutput }} MBps"
+                            data-description="{{ host.name }}"
                             style="color: white;">
-          {{ (host['sumoutput']/1000)|round(2) }}Gbps
+          {{ (host.sumoutput/1000)|round(2) }}Gbps
         </a>
       </th>
       <!-- RBANWIDTH -->
-      <th colspan="10" class="hidden-xs hidden-sm">~{{ host['rbandwidth']}}Mbps/m</th>
+      <th colspan="10" class="hidden-xs hidden-sm">~{{ host.rbandwidth}}Mbps/m</th>
     </tr>
   </thead>
   <!-- LSPS -->
   <tbody id="tablebody" class="collapse in">
-      {% for lsp in host['lsplist']%}
+      {% for lsp in host.lsplist%}
       {% include 'lsp.html' %}
       {% endfor %}
   </tbody>
