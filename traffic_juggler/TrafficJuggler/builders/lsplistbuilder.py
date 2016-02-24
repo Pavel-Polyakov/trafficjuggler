@@ -31,7 +31,7 @@ class LSPListBuilder(object):
             if lsp_bandwidth != None:
                 lsp_bandwidth = int(lsp_bandwidth)
 
-            if (lsp_state != 'Inactive' and lsp_output != None and lsp_bandwidth != None):
+            if (lsp_state != 'Inactive' and lsp_state != 'Dn' and lsp_output != None and lsp_bandwidth != None and lsp_bandwidth != 0):
                 lsp_rbandwidth = round(float(lsp_output)/lsp_bandwidth,1)
                 lsp_rbandwidth = float(lsp_rbandwidth)
             else:

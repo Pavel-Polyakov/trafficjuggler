@@ -6,7 +6,13 @@
       <!-- IP -->
       <th class="nowrap">{{ host.ip }} | {{ host.name}}</th>
       <!-- SUMMARY BANDWIDTH -->
-      <th>{{ host.sumbandwidth }}m</th>
+      <th>
+        {% if host.sumbandwidth == 0 %}
+          Dynamic
+        {% else %}
+          {{ host.sumbandwidth }}m
+        {% endif %}
+      </th>
       <!-- SUMMARY OUTPUT -->
       <th>
         <a id="show_graph"  data-rel="{{ host.ip }}"
@@ -18,7 +24,14 @@
         </a>
       </th>
       <!-- RBANWIDTH -->
-      <th colspan="10" class="hidden-xs hidden-sm">~{{ host.rbandwidth}}Mbps/m</th>
+      <th colspan="10" class="hidden-xs hidden-sm">
+      {% if host.rbandwidth == None %}
+        Dynamic
+      {% else %}
+        ~{{ (host.rbandwidth|round(2)) }}Mbps/m
+      {% endif %}
+      </th>
+
     </tr>
   </thead>
   <!-- LSPS -->

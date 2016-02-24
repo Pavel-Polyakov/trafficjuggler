@@ -1,4 +1,5 @@
 $(document).ready(function(){
+
   $("a#show_graph").click(function () {
       var name = $(this).data('rel');
       var type = $(this).data('type');
@@ -19,6 +20,6 @@ $(document).ready(function(){
       $("#graph_header").text(name);
       $("#graph_description").text(description);
       $("#graph_output").text(output);
-
   });
+
 })

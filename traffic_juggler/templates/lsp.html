@@ -10,7 +10,13 @@
   <!-- NAME -->
   <td class="nowrap">{{ lsp.name }}</td>
   <!-- BANDWIDTH -->
-  <td>{{ lsp.bandwidth }}m</td>
+  <td>
+    {% if lsp.bandwidth == 0 %}
+    Dynamic
+    {% else %}
+    {{ lsp.bandwidth }}m
+    {% endif %}
+  </td>
   <!-- OUTPUT -->
   <td>
     <a id="show_graph"  data-rel="{{ lsp.name}}"
@@ -25,11 +31,15 @@
     </a>
   </td>
   <!-- RBANWIDTH -->
+  <td class="hidden-xs hidden-sm">
   {% if lsp.rbandwidth != None %}
-    <td class="hidden-xs hidden-sm">{{ lsp.rbandwidth }}Mbps/m</td>
+    {{ lsp.rbandwidth }}Mbps/m
+  {% elif lsp.state == 'Up' and lsp.rbandwidth == None%}
+    Dynamic
   {% else %}
-    <td class="hidden-xs hidden-sm">{{ lsp.rbandwidth }}</td>
+    {{ lsp.rbandwidth }}
   {% endif %}
+  </td>
   <!-- TO -->
   <td class="hidden-xs hidden-sm nowrap">to <abbr title="{{ lsp.to }}">{{ lsp.to_name }}</abbr></td>
   <!-- PATH -->

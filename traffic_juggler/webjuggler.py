@@ -86,6 +86,17 @@ def plot_host(key):
     y = HostOutput
     return getGraph(x,y)
 
+@app.route('/hosts')
+def hosts():
+    last_parse = session.query(Image).all()[-1]
+    last_parse_id = last_parse.id
+    last_parse_time = setMowTime(last_parse.time)
+    hosts = getHostsByImageId(last_parse_id)
+    for host in hosts:
+        host.image = '/host/%s.png' % host.ip
+    return render_template('hosts.html',
+                            hosts=hosts)
+
 def getHostsByImageId(id):
     hosts = session.query(Host).\
                             filter(Host.ip == LSP.to).\
@@ -106,7 +117,7 @@ def getHostsByImageId(id):
                                 session.query(subq_b.c.sumbandwidth,
                                 subq_o.c.sumoutput,
                                 subq_r.c.rbandwidth).first()
-        host.rbandwidth = round(host.rbandwidth,2)
+
     hosts = sorted(hosts, key = lambda x: x.sumoutput, reverse = True)
     return hosts
 
