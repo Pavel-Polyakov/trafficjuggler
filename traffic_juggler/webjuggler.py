@@ -82,20 +82,31 @@ def plot_host(key):
         output = session.query(func.sum(LSP.output)).\
                 filter(LSP.image_id == image.id).\
                 filter(LSP.to == key).scalar()
+        if output == None: output = 0
         HostOutput.append(output)
     y = HostOutput
     return getGraph(x,y)
 
-@app.route('/hosts')
-def hosts():
+@app.route('/<key>s')
+def plot_list(key):
     last_parse = session.query(Image).all()[-1]
     last_parse_id = last_parse.id
     last_parse_time = setMowTime(last_parse.time)
-    hosts = getHostsByImageId(last_parse_id)
-    for host in hosts:
-        host.image = '/host/%s.png' % host.ip
-    return render_template('hosts.html',
-                            hosts=hosts)
+    if key == 'interface':
+        f = getInterfacesByImageId
+        val_compared = 'description'
+        val_out = 'output'
+    elif key == 'host':
+        f = getHostsByImageId
+        val_compared = 'ip'
+        val_out = 'sumoutput'
+    elements = f(last_parse_id)
+    for element in elements:
+        element.img = '/{key}/{val}.png'.format(key = key, val = getattr(element, val_compared))
+        element.comment = getattr(element, val_compared)
+        element.out = getattr(element,val_out)
+    return render_template('list.html',
+                            elements=elements)
 
 def getHostsByImageId(id):
     hosts = session.query(Host).\

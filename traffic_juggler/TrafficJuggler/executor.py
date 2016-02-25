@@ -30,7 +30,7 @@ class Executor(object):
         if self.conn.connect(host):
             print 'Connected'
             self.conn.login(account)
-            self.conn.execute('cli')
+            # self.conn.execute('cli')
         else:
             print 'Does not connected. Please check your input'
             sys.exit()

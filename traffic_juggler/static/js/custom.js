@@ -21,5 +21,8 @@ $(document).ready(function(){
       $("#graph_description").text(description);
       $("#graph_output").text(output);
   });
-
+  $("#element*").load(function () {
+    var this_id = $(this).attr('value')
+    $('#spinner*[value~=' + this_id + ']').hide();
+  });
 })
