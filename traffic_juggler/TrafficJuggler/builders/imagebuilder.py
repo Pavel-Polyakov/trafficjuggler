@@ -31,7 +31,7 @@ class ImageBuilder(object):
         lsplistbuilder = LSPListBuilder(self.parser)
         lsplist = lsplistbuilder.create()
 
-        nhinterfaces = self.getNextHopInterfaces(lsplist)
+        nhinterfaces = self.__getNextHopInterfaces__(lsplist)
         nhinterfaces_names = set([x['name'] for x in nhinterfaces])
 
         interfacelistbuilder = InterfaceListBuilder(self.parser)
@@ -56,7 +56,7 @@ class ImageBuilder(object):
         self.session.add_all(lsplist)
         self.session.commit()
 
-    def getNextHopInterfaces(self, lsplist):
+    def __getNextHopInterfaces__(self, lsplist):
         nhinterfaces = []
         routes = self.parser.get_interfaces_config()
         for ip_nh in [findFirstHop(x.path) for x in lsplist]:
@@ -74,12 +74,14 @@ class ImageBuilder(object):
         self.session.commit()
 
     def __parsePrefixes__(self):
-        # add hosts if its not exist
-        hostbuilder = HostBuilder(self.parser)
-        hosts = hostbuilder.create()
-        for h in hosts:
-            if not self.session.query(Host.ip).filter(Host.ip==h.ip).first():
-                self.session.add(h)
+        # add  prefix if its not exis
+        prefixbuilder = PrefixBuilder(self.parser)
+        prefixes = prefixbuilder.create()
+        for p in prefixes:
+            if not self.session.query("'"+p.name+"'").filter(Prefix.name==p.name).first():
+                host = self.session.query(Host).filter(Host.ip == p.host_ip).first();
+                p.host_id = host.id
+                self.session.add(p)
         self.session.commit()
 
 def findFirstHop(route):

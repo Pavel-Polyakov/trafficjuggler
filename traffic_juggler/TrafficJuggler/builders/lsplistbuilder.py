@@ -1,4 +1,3 @@
-from TrafficJuggler.models.lsplist import LSPList
 from TrafficJuggler.models.lsp import LSP
 import re
 
@@ -7,7 +6,7 @@ class LSPListBuilder(object):
         self.parser = parser
 
     def create(self):
-        lsplist = LSPList()
+        lsplist = []
         lsp_fromconfig = self.parser.get_lsp_config()
         path_fromconfig = self.parser.get_path_config()
         lsp_state_fromcli = self.parser.get_lsp_state()

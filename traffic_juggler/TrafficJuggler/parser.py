@@ -37,7 +37,7 @@ class Parser(object):
             name = tree.xpath('string(name/text())')
             to = tree.xpath('string(to/text())')
             bandwidth = tree.xpath('string(bandwidth/per-traffic-class-bandwidth/text())')
-            bandwidth = convertBandwidthToM(bandwidth)
+            bandwidth = self.convertBandwidthToM(bandwidth)
 
             path = tree.xpath('primary/name')[0].text
             LSP['name'] = name
@@ -139,6 +139,22 @@ class Parser(object):
             prefix = IPNetwork(lsa_id+'/'+mask)
             result.append({'host_ip':host_ip, 'prefix':str(prefix)})
         return result
+
+    def convertBandwidthToM(self,band):
+        if re.match('m|g', band):
+            band = re.sub('m','000',band)
+            band = re.sub('g','000000',band)
+        band = re.sub('000000$','m',band)
+        band = re.sub('g$','000m',band)
+        if re.match('m', band):
+            re.sub('m','',band)
+            band = float(band)/1000
+        band = re.sub('m','',band)
+        try:
+            band = int(band)
+        except ValueError:
+            band = 0
+        return band
 
     def __get_lsp_output_stat__(self):
         stat_time = self.get_time()

@@ -1,7 +1,4 @@
-from TrafficJuggler.models.interfacelist import InterfaceList
 from TrafficJuggler.models.interface import Interface
-from TrafficJuggler.util import convertToGbps
-
 import re
 
 class InterfaceListBuilder(object):
@@ -9,7 +6,7 @@ class InterfaceListBuilder(object):
         self.parser = parser
 
     def create(self,nexthop_interfaces_from_lsplist):
-        interfacelist = InterfaceList()
+        interfacelist = []
         interfaces_fromcli = self.parser.get_interfaces_state()
 
         for interface in nexthop_interfaces_from_lsplist:
@@ -24,7 +21,7 @@ class InterfaceListBuilder(object):
 
             if interface_speed != None:
                 interface_speed = re.sub('Gbps', '000', interface_speed)
-                interface_utilization = self.getUtilization(speed=interface_speed,output=interface_output)
+                interface_utilization = self.__getUtilization__(speed=interface_speed,output=interface_output)
             else:
                 interface_utilization = None
 
@@ -36,5 +33,5 @@ class InterfaceListBuilder(object):
                                         ))
         return interfacelist
 
-    def getUtilization(self,speed,output):
+    def __getUtilization__(self,speed,output):
         return int(round(output/float(speed)*100,2))
