@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from TrafficJuggler.models.image import Image
 from TrafficJuggler.models.host import Host
 from TrafficJuggler.models.interface import Interface
@@ -47,12 +48,14 @@ class ImageBuilder(object):
         self.session.commit()
 
         for l in lsplist:
-            nh_name = [x['name'] for x in nhinterfaces if x['ip'] == findFirstHop(l.path)][0]
-            nh_interface = self.session.query(Interface).\
-                                        filter(Interface.image_id == image.id).\
-                                        filter(Interface.name == nh_name).first()
-            l.interface_id = nh_interface.id
-
+            try:
+                nh_name = [x['name'] for x in nhinterfaces if x['ip'] == findFirstHop(l.path)][0]
+                nh_interface = self.session.query(Interface).\
+                                            filter(Interface.image_id == image.id).\
+                                            filter(Interface.name == nh_name).first()
+                l.interface_id = nh_interface.id
+            except IndexError:
+                l.interface_id = None
         self.session.add_all(lsplist)
         self.session.commit()
 
@@ -60,8 +63,12 @@ class ImageBuilder(object):
         nhinterfaces = []
         routes = self.parser.get_interfaces_config()
         for ip_nh in [findFirstHop(x.path) for x in lsplist]:
-            interface_name = next(r['name'] for r in routes if IPAddress(ip_nh) in IPNetwork(r['destination']))
-            nhinterfaces.append({'name': interface_name, 'ip': ip_nh})
+            try:
+                interface_name = next(r['name'] for r in routes if IPAddress(ip_nh) in IPNetwork(r['destination']))
+                nhinterfaces.append({'name': interface_name, 'ip': ip_nh})
+            except Exception:
+                #TODO: нужно реализовать для loose
+                pass
         return nhinterfaces
 
     def __parseHosts__(self):

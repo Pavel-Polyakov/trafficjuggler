@@ -3,7 +3,7 @@
   {% for interface in interfaces %}
   <thead>
     <!-- ROW COLOR -->
-    {% if interface.speed == "Unspecified" %}
+    {% if interface.speed == None  %}
       <tr class="bg-danger text-danger">
     {% else %}
       <tr class="bg-primary">
@@ -11,7 +11,13 @@
     <!-- NAME -->
     <th class="nowrap">{{ interface.name }} | {{ interface.description }}</th>
     <!-- SPEED -->
-    <th>{{ (interface.speed/1000)|int }}Gbps</th>
+    <th>
+    {% if interface.speed == None %}
+      Down
+    {% else %}
+      {{ (interface.speed/1000)|int }}Gbps
+    {% endif %}
+    </th>
     <!-- OUTPUT -->
     <th>
       <a id="show_graph"  data-rel="{{ interface.description }}"
@@ -31,7 +37,13 @@
       </div>
     </th>
     <!-- RSVP OUTPUT -->
-    <th class="hidden-xs hidden-sm nowrap">RSVP: {{ (interface.rsvpout/1000)|round(2) }}Gbps</th>
+    <th class="hidden-xs hidden-sm nowrap">RSVP: 
+    {% if interface.speed == None or interface.rsvpout == None%}
+      0Gbps
+    {% else %}
+      {{ (interface.rsvpout/1000)|round(2) }}Gbps
+    {% endif %}  
+    </th>
     <!-- LDP OUTPUT -->
     <th class="hidden-xs hidden-sm nowrap">LDP: {{ (interface.ldpout/1000)|round(2) }}Gbps</th>
     </tr>

@@ -6,14 +6,15 @@ from time import strftime, sleep
 import logging, sys
 from TrafficJuggler.config import FULL_PATH
 
-HOST = 'm9-r0'
+HOSTS = ['m9-r0','m9-r2']
 
 logging.basicConfig(stream=sys.stdout)
 
-parser = Parser(HOST)
-rb = ImageBuilder(HOST, session, parser)
+for HOST in HOSTS:
+    parser = Parser(HOST)
+    rb = ImageBuilder(HOST, session, parser)
 
-rb.parse()
+    rb.parse()
 
-with open('{path}tjparse.log'.format(path=FULL_PATH),'a') as f:
-    f.write('Parsed: '+strftime("%Y-%m-%d %H:%M:%S")+'\n')
+    with open('{path}tjparse.log'.format(path=FULL_PATH),'a') as f:
+        f.write('Parsed: '+strftime("%Y-%m-%d %H:%M:%S")+'\n')

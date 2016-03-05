@@ -1,31 +1,31 @@
 from flask import Flask, render_template, redirect
 from flask_sqlalchemy import SQLAlchemy
 from TrafficJuggler.models.lsp import LSP
-from TrafficJuggler.models.lsplist import LSPList
 from TrafficJuggler.models.interface import Interface
-from TrafficJuggler.models.interfacelist import InterfaceList
 from TrafficJuggler.models.host import Host
 from TrafficJuggler.models.image import Image
 from TrafficJuggler.parser import Parser
 from TrafficJuggler.builders.imagebuilder import ImageBuilder
 from plotter import getGraph
-from pytz import timezone
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
-import logging, sys
+from sqlalchemy import or_
+import logging
+import sys
 from datetime import datetime, timedelta
 from TrafficJuggler.config import FULL_PATH
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{path}tj.db'.format(path=FULL_PATH)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{path}tj.db'.\
+                                        format(path=FULL_PATH)
 db = SQLAlchemy(app)
 session = db.session
 
 logging.basicConfig(stream=sys.stderr)
 
+
 @app.route('/')
 def index():
-    last_parse = session.query(Image).all()[-1]
+    last_parse = session.query(Image).filter(Image.router == 'm9-r0').all()[-1]
     last_parse_id = last_parse.id
     last_parse_time = setMowTime(last_parse.time)
 
@@ -36,6 +36,22 @@ def index():
                             interfaces=interfaces,
                             hosts=hosts,
                             last_parse=last_parse_time)
+
+
+@app.route('/r2')
+def r2():
+    last_parse = session.query(Image).filter(Image.router == 'm9-r2').all()[-1]
+    last_parse_id = last_parse.id
+    last_parse_time = setMowTime(last_parse.time)
+
+    hosts = getHostsByImageId(last_parse_id)
+    interfaces = getInterfacesByImageId(last_parse_id)
+
+    return render_template('index.html',
+                            interfaces=interfaces,
+                            hosts=hosts,
+                            last_parse=last_parse_time)
+
 
 @app.route('/update')
 def update():
@@ -48,6 +64,7 @@ def update():
 @app.route('/lsp/<key>.png')
 def plot_lsp(key):
     xy = session.query(LSP.output, Image.time).\
+            filter(Image.router == 'm9-r0').\
             filter(LSP.name == key).\
             filter(LSP.image_id == Image.id).\
             filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).\
@@ -61,6 +78,7 @@ def plot_lsp(key):
 @app.route('/interface/<key>.png')
 def plot_interface(key):
     xy = session.query(Interface.output, Image.time).\
+            filter(Image.router == 'm9-r0').\
             filter(Interface.description == key).\
             filter(Interface.image_id == Image.id).\
             filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).\
@@ -74,6 +92,7 @@ def plot_interface(key):
 @app.route('/host/<key>.png')
 def plot_host(key):
     images = session.query(Image).\
+            filter(Image.router == 'm9-r0').\
             filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).all()
     x = [k.time for k in images]
     x = map(setMowTime,x)
@@ -89,7 +108,7 @@ def plot_host(key):
 
 @app.route('/<key>s')
 def plot_list(key):
-    last_parse = session.query(Image).all()[-1]
+    last_parse = session.query(Image).filter(Image.router == 'm9-r0').all()[-1]
     last_parse_id = last_parse.id
     last_parse_time = setMowTime(last_parse.time)
     if key == 'interface':
@@ -100,6 +119,10 @@ def plot_list(key):
         f = getHostsByImageId
         val_compared = 'ip'
         val_out = 'sumoutput'
+    elif key == 'lsp':
+        f = getLSPSByImageId
+        val_compared = 'name'
+        val_out = 'output'
     elements = f(last_parse_id)
     for element in elements:
         element.img = '/{key}/{val}.png'.format(key = key, val = getattr(element, val_compared))
@@ -107,6 +130,27 @@ def plot_list(key):
         element.out = getattr(element,val_out)
     return render_template('list.html',
                             elements=elements)
+
+@app.route('/lsp/<key>')
+def plot_grep(key):
+    last_parse = session.query(Image).filter(Image.router == 'm9-r0').all()[-1]
+    last_parse_id = last_parse.id
+    last_parse_time = setMowTime(last_parse.time)
+    lsps = session.query(LSP).filter(LSP.image_id == last_parse_id)
+    lsps = lsps.filter(Image.router == 'm9-r0')
+    lsps = lsps.filter(or_(LSP.name.contains(k) for k in key.split('___')))
+    lsps = lsps.all()
+    elements = sorted(lsps, key = lambda x: x.output, reverse = True)
+    val_compared = 'name'
+    val_out = 'output'
+
+    for element in elements:
+        element.img = '/{key}/{val}.png'.format(key = 'lsp', val = getattr(element, val_compared))
+        element.comment = getattr(element, val_compared)
+        element.out = getattr(element,val_out)
+    return render_template('list.html',
+                                elements=elements)
+
 
 def getHostsByImageId(id):
     hosts = session.query(Host).\
@@ -144,11 +188,22 @@ def getInterfacesByImageId(id):
                         filter(lsplist.c.to == Host.ip).\
                         order_by(lsplist.c.output.desc()).all()
         interface.rsvpout = session.query(func.sum(lsplist.c.output)).scalar()
-        interface.ldpout = interface.output - interface.rsvpout
+        if interface.output and interface.rsvpout:
+            interface.ldpout = interface.output - interface.rsvpout
+        else:
+            interface.ldpout = 0
         if interface.ldpout < 100:
             interface.ldpout = 0
     interfaces = sorted(interfaces, key = lambda x: x.output, reverse = True)
     return interfaces
+
+def getLSPSByImageId(id):
+    lsps = session.query(LSP).\
+                    filter(LSP.image_id == id).all()
+
+    lsps = sorted(lsps, key = lambda x: x.output, reverse = True)
+    return lsps
+
 
 def setMowTime(x):
     return x + timedelta(hours=3)

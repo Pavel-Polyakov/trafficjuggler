@@ -16,6 +16,8 @@ class InterfaceListBuilder(object):
             except ValueError:
                 interface_fromcli = {'name': 'None', 'speed': None, 'output': 0}
             interface_speed = interface_fromcli.get('speed', None)
+            if interface_speed == 'Unspecified':
+                interface_speed = None
             interface_output = interface_fromcli.get('output', None)
             interface_description = interface_fromcli.get('description', 'None')
 
