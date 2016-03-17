@@ -20,7 +20,11 @@
                             data-output="{{ host.sumoutput }} MBps"
                             data-description="{{ host.name }}"
                             style="color: white;">
-          {{ (host.sumoutput/1000)|round(2) }}Gbps
+          {% if host.sumoutput == None %}
+             None
+          {% else %}
+            {{ (host.sumoutput/1000)|round(2) }}Gbps
+          {% endif %}
         </a>
       </th>
       <!-- RBANWIDTH -->
