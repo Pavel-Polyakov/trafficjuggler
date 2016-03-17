@@ -1,4 +1,3 @@
-from TrafficJuggler.util import convertBandwidthToM
 from TrafficJuggler.executor import Executor
 from netaddr import IPNetwork
 import time
@@ -45,6 +44,30 @@ class Parser(object):
             LSP['bandwidth'] = bandwidth
             LSP['pathname'] = path
             result.append(LSP)
+        return result
+
+    def get_extended_path_config(self):
+        result = []
+        command = self.executor.getXMLByCommand('show configuration protocol mpls')
+        rootTree = command.xpath('//configuration/protocols/mpls/path')
+        for tree in rootTree:
+            PATH = {}
+            name = tree.xpath('string(name/text())')
+            hops = tree.xpath('path-list')
+            route = []
+            for hop in hops:
+                hop_ip = hop.xpath('string(name/text())')
+                hop_type_list = hop.xpath('loose|strict')
+                if len(hop_type_list) > 0:
+                    hop_type = hop_type_list[0].tag
+                else:
+                    hop_type = None
+                hop_dict = {'ip': hop_ip,
+                            'type': hop_type}
+                route.append(hop_dict)
+            PATH['name'] = name
+            PATH['route'] = route
+            result.append(PATH)
         return result
 
     def get_path_config(self):

@@ -28,9 +28,9 @@ class Executor(object):
         self.name = host
         self.conn = SSH2()
         if self.conn.connect(host):
-            print 'Connected'
+            print('Connected')
             self.conn.login(account)
             # self.conn.execute('cli')
         else:
-            print 'Does not connected. Please check your input'
+            print('Does not connected. Please check your input')
             sys.exit()
