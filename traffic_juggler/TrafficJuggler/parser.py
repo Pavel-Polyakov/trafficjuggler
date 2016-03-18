@@ -57,7 +57,7 @@ class Parser(object):
             result.append(LSP)
         return result
 
-    def get_extended_path_config(self):
+    def get_path_config(self):
         result = []
         command = self.executor.getXMLByCommand('show configuration protocol mpls')
         rootTree = command.xpath('//configuration/protocols/mpls/path')
@@ -76,22 +76,6 @@ class Parser(object):
                 hop_dict = {'ip': hop_ip,
                             'type': hop_type}
                 route.append(hop_dict)
-            PATH['name'] = name
-            PATH['route'] = route
-            result.append(PATH)
-        return result
-
-    def get_path_config(self):
-        result = []
-        command = self.executor.getXMLByCommand('show configuration protocol mpls')
-        rootTree = command.xpath('//configuration/protocols/mpls/path')
-        for tree in rootTree:
-            PATH = {}
-            name = tree.xpath('string(name/text())')
-            hops = tree.xpath('path-list')
-            route = []
-            for hop in hops:
-                route.append(hop.xpath('string(name/text())'))
             PATH['name'] = name
             PATH['route'] = route
             result.append(PATH)

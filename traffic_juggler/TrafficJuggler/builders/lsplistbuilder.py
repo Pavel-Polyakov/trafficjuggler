@@ -8,7 +8,7 @@ class LSPListBuilder(object):
     def create(self):
         lsplist = []
         lsp_fromconfig = self.parser.get_lsp_config()
-        path_fromconfig = self.parser.get_extended_path_config()
+        path_fromconfig = self.parser.get_path_config()
         lsp_state_fromcli = self.parser.get_lsp_state()
         lsp_output_fromcli = self.parser.get_lsp_output()
 
