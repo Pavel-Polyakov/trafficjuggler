@@ -63,12 +63,10 @@ class ImageBuilder(object):
         nhinterfaces = []
         routes = self.parser.get_interfaces_config()
         for ip_nh in [findFirstHop(x.path) for x in lsplist]:
-            try:
+
                 interface_name = next(r['name'] for r in routes if IPAddress(ip_nh) in IPNetwork(r['destination']))
                 nhinterfaces.append({'name': interface_name, 'ip': ip_nh})
-            except Exception:
-                #TODO: нужно реализовать для loose
-                pass
+
         return nhinterfaces
 
     def __parseHosts__(self):
@@ -81,7 +79,7 @@ class ImageBuilder(object):
         self.session.commit()
 
     def __parsePrefixes__(self):
-        # add  prefix if its not exis
+        # add prefix if its not exis
         prefixbuilder = PrefixBuilder(self.parser)
         prefixes = prefixbuilder.create()
         for p in prefixes:

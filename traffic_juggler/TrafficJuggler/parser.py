@@ -6,6 +6,7 @@ import re
 class Parser(object):
     def __init__(self,hostname):
         self.executor = Executor(hostname)
+        self.hostname = hostname
 
     def close(self):
         self.executor.close()
@@ -16,7 +17,7 @@ class Parser(object):
             result =  h[p]
         return result
 
-    def get_ibgp_neighbors(self):
+    def get_ibgp_hosts(self):
         result = []
         command = self.executor.getXMLByCommand('show configuration protocol bgp group ibgp')
         rootTree = command.xpath('//configuration/protocols/bgp/group/neighbor')
@@ -25,6 +26,13 @@ class Parser(object):
             neighbor['ip'] = tree.find('name').text
             neighbor['description'] = tree.find('description').text
             result.append(neighbor)
+        return result
+
+    def get_itself(self):
+        command = self.executor.getXMLByCommand('show configuration protocol bgp group ibgp')
+        result = {}
+        result['description'] = self.hostname
+        result['ip'] = command.xpath('string(//configuration/protocols/bgp/group/local-address/text())')
         return result
 
     def get_lsp_config(self):
@@ -38,7 +46,10 @@ class Parser(object):
             bandwidth = tree.xpath('string(bandwidth/per-traffic-class-bandwidth/text())')
             bandwidth = self.convertBandwidthToM(bandwidth)
 
-            path = tree.xpath('primary/name')[0].text
+            try:
+                path = tree.xpath('primary/name')[0].text
+            except IndexError:
+                path = 'dynamic'
             LSP['name'] = name
             LSP['to'] = to
             LSP['bandwidth'] = bandwidth
@@ -147,6 +158,17 @@ class Parser(object):
                     result.append(INTERFACE)
                 except AttributeError:
                     pass
+        return result
+
+    def get_lsp_explicit_route(self,name):
+        result = []
+        command = self.executor.getXMLByCommand('show mpls lsp unidirectional name {name} detail'.format(name=name))
+        for address in command.xpath('//explicit-route/address'):
+            hop_ip = address.text
+            hop_type = address.xpath('string((following-sibling::explicit-route-type)[1]/text())')
+            hop_dict = {'ip': hop_ip,
+                        'type': hop_type}
+            result.append(hop_dict)
         return result
 
     def get_lsp_output(self):
