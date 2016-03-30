@@ -6,7 +6,7 @@ from config import FULL_PATH
 from time import strftime, sleep
 import logging, sys
 
-HOSTS = ['m9-r0','m9-r2','eburg-r0']
+HOSTS = ['m9-r0','m9-r2']
 
 logging.basicConfig(stream=sys.stdout)
 

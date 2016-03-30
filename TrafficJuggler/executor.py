@@ -1,6 +1,6 @@
 from Exscript import Account
 from Exscript.protocols import SSH2
-from TrafficJuggler import config
+from config import USERNAME, PASSWORD
 from lxml import etree
 import re
 import sys
@@ -24,7 +24,7 @@ class Executor(object):
         self.conn.close()
 
     def __create__(self, host):
-        account = Account(name=config.username, password=config.password)
+        account = Account(name=USERNAME, password=PASSWORD)
         self.name = host
         self.conn = SSH2()
         if self.conn.connect(host):
