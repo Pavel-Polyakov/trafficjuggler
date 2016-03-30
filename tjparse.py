@@ -2,11 +2,11 @@
 from TrafficJuggler.builders.dbbuilder import session
 from TrafficJuggler.builders.imagebuilder import ImageBuilder
 from TrafficJuggler.parser import Parser
-from config import FULL_PATH
+from config import FULL_PATH, HOSTS
 from time import strftime, sleep
 import logging, sys
 
-HOSTS = ['m9-r0','m9-r2']
+
 
 logging.basicConfig(stream=sys.stdout)
 

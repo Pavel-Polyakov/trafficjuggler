@@ -1,6 +1,6 @@
 {% block lspbyinterface %}
 <table class="table table-hover table-condensed">
-  {% for interface in interfaces %}
+  {% for interface in router['interfaces'] %}
   <thead>
     <!-- ROW COLOR -->
     {% if interface.speed == None  %}
@@ -21,6 +21,7 @@
     <!-- OUTPUT -->
     <th>
       <a id="show_graph"  data-rel="{{ interface.description }}"
+                          data-router="{{ router['name'] }}"
                           data-type="interface"
                           data-output="{{ interface.output }} MBps"
                           data-description="{{ interface.description }}"
@@ -37,15 +38,15 @@
       </div>
     </th>
     <!-- RSVP OUTPUT -->
-    <th class="hidden-xs hidden-sm nowrap">RSVP: 
+    <th class="hidden-xs hidden-sm nowrap">Сумма LSP:
     {% if interface.speed == None or interface.rsvpout == None%}
       0Gbps
     {% else %}
       {{ (interface.rsvpout/1000)|round(2) }}Gbps
-    {% endif %}  
+    {% endif %}
     </th>
     <!-- LDP OUTPUT -->
-    <th class="hidden-xs hidden-sm nowrap">LDP: {{ (interface.ldpout/1000)|round(2) }}Gbps</th>
+    <th class="hidden-xs hidden-sm nowrap">Остаток: {{ (interface.ldpout/1000)|round(2) }}Gbps</th>
     </tr>
   </thead>
   <!-- LSPS -->

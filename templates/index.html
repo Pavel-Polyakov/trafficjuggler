@@ -23,27 +23,6 @@
           <li><a href="#lspbyhost" data-toggle="tab">По хостам</a></li>
         </ul>
         <ul class="nav navbar-nav navbar-right">
-          <!-- DROPDOWN LIST WITH GRAPHS -->
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Графики <span class="caret"></span></a>
-            <ul class="dropdown-menu">
-              <li>
-                <a href="/hosts">
-                  <span class="glyphicon glyphicon-th-list"></span> Все хосты
-                </a>
-              </li>
-              <li>
-                <a href="/interfaces">
-                  <span class="glyphicon glyphicon-th-list"></span> Все интерфейсы
-                </a>
-              </li>
-              <li>
-                <a href="/lsps">
-                  <span class="glyphicon glyphicon-th-list"></span> Все LSP
-                </a>
-              </li>
-            </ul>
-          </li>
           <!-- СВЕРНУТЬ BUTTON -->
           <li>
             <a href="#" data-toggle="collapse" data-target="tbody">
@@ -61,21 +40,45 @@
 <div class="panel-body">
   <div class="tab-content">
     <!-- LSP BY INTERFACE PAGE -->
-    <div class="tab-pane fade in active" id="lspbyinterface">{% include 'lspbyinterface.html' %}</div>
+    <div class="tab-pane fade in active" id="lspbyinterface">
+      {% for router in routers %}
+        <h3>{{ router['name'] }}<br><small>Обновлено: {{ router['last_parse'] }}</small></h3>
+        <ul class="list-inline">
+          <li>
+            <a href="/{{ router['name'] }}/interfaces">
+              <span class="glyphicon glyphicon-th-list"></span> Все интерфейсы
+            </a>
+          </li>
+          <li>
+            <a href="/{{ router['name'] }}/lsps">
+              <span class="glyphicon glyphicon-align-left"></span> Все LSP
+            </a>
+          </li>
+        </ul>
+        {% include 'lspbyinterface.html' %}
+      {% endfor %}
+    </div>
     <!-- LSP BY HOST PAGE -->
-    <div class="tab-pane fade" id="lspbyhost">{% include 'lspbyhost.html' %}</div>
+    <div class="tab-pane fade" id="lspbyhost">
+      {% for router in routers %}
+        <h3>{{ router['name'] }}<br><small>Обновлено: {{ router['last_parse'] }}</small></h3>
+        <ul class="list-inline">
+          <li>
+            <a href="/{{ router['name'] }}/hosts">
+              <span class="glyphicon glyphicon-indent-left"></span> Все хосты
+            </a>
+          </li>
+          <li>
+            <a href="/{{ router['name'] }}/lsps">
+              <span class="glyphicon glyphicon-align-left"></span> Все LSP
+            </a>
+          </li>
+        </ul>
+        {% include 'lspbyhost.html' %}
+      {% endfor %}
+      </div>
   </div>
 <!-- END BODY -->
-</div>
-<!-- FOOTER -->
-<div class="container-fluid">
-  <div class="navbar navbar-default">
-    <div class="container-fluid">
-      <p class="navbar-text pull-right nowrap">
-        Обновлено: <strong>{{ last_parse }}<br></strong>
-      </p>
-    </div>
-  </div>
 </div>
 
 {% endblock %}
