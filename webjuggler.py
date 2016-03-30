@@ -12,7 +12,7 @@ from sqlalchemy import or_
 import logging
 import sys
 from datetime import datetime, timedelta
-from TrafficJuggler.config import FULL_PATH
+from config import FULL_PATH
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{path}tj.db'.\

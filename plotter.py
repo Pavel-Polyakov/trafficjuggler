@@ -4,7 +4,6 @@ from matplotlib.figure import Figure
 from matplotlib import pyplot as PLT
 from matplotlib import dates
 from statsmodels.nonparametric.smoothers_lowess import lowess
-
 import StringIO
 import time
 from datetime import date, datetime
