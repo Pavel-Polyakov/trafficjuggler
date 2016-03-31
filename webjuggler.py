@@ -33,8 +33,8 @@ def index():
         last_parse_time = setMowTime(last_parse.time)
 
         r['name'] = host
-        r['hosts'] = getHostsByImageId(last_parse_id)
         r['interfaces'] = getInterfacesByImageId(last_parse_id)
+        r['hosts'] = getHostsByImageId(last_parse_id)
         r['last_parse'] = last_parse_time
         routers.append(r)
 
