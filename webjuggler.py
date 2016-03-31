@@ -150,7 +150,7 @@ def getInterfacesByImageId(id):
         if interface.output and interface.rsvpout:
             interface.ldpout = interface.output - interface.rsvpout
         else:
-            interface.ldpout = 0
+            interface.ldpout = interface.output
         if interface.ldpout < 100:
             interface.ldpout = 0
     interfaces = sorted(interfaces, key = lambda x: x.output, reverse = True)
