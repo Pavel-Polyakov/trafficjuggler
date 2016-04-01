@@ -111,7 +111,7 @@ def plot_interface_lsplist(router, interface):
     elements = []
     for l in lsps:
         L = copy(l)
-        L.img = '/{router}/lsp/{name}.png'.format(router=router,name=L.name)
+        L.img = '/{router}/lsp/{name}.png'.format(router=router, name=L.name)
         L.comment = L.name
         L.out = L.output
         elements.append(L)
@@ -133,7 +133,7 @@ def plot_host_lsplist(router, host):
     elements = []
     for l in lsps:
         L = copy(l)
-        L.img = '/{router}/lsp/{name}.png'.format(router=router,name=L.name)
+        L.img = '/{router}/lsp/{name}.png'.format(router=router, name=L.name)
         L.comment = L.name
         L.out = L.output
         elements.append(L)
