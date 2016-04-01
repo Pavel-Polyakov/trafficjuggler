@@ -4,7 +4,10 @@
   <thead>
     <tr class="bg-primary">
       <!-- IP -->
-      <th class="nowrap">{{ host.ip }} | {{ host.name}}</th>
+      <th class="nowrap">
+        <small><a href="/{{ router['name'] }}/host/{{ host.ip }}/lsplist" style="color: white;" class="glyphicon glyphicon-align-left"></a></small>
+        {{ host.ip }} | {{ host.name}}
+      </th>
       <!-- SUMMARY BANDWIDTH -->
       <th>
         {% if host.sumbandwidth == 0 %}

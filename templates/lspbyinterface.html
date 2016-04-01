@@ -9,7 +9,10 @@
       <tr class="bg-primary">
     {% endif %}
     <!-- NAME -->
-    <th class="nowrap">{{ interface.name }} | {{ interface.description }}</th>
+    <th class="nowrap">
+      <small><a href="/{{ router['name'] }}/interface/{{ interface.description }}/lsplist" style="color: white;" class="glyphicon glyphicon-align-left"></a></small>
+       {{ interface.name }} | {{ interface.description }}
+    </th>
     <!-- SPEED -->
     <th>
     {% if interface.speed == None %}

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from copy import copy
 import logging
 import sys
+import re
 
 from config import FULL_PATH, HOSTS
 from TrafficJuggler.models.lsp import LSP
@@ -90,6 +91,54 @@ def plot_host(router, key):
         HostOutput.append(output)
     y = HostOutput
     return getGraph(x, y)
+
+
+@app.route('/<router>/interface/<interface>/lsplist')
+def plot_interface_lsplist(router, interface):
+    last_parse = session.query(Image).filter(Image.router == router).all()[-1]
+    last_parse_id = last_parse.id
+
+    interface_id = session.query(Interface.id).\
+        filter(Interface.description == interface).\
+        filter(Interface.image_id == last_parse_id).scalar()
+
+    lsps = session.query(LSP).\
+        filter(LSP.image_id == last_parse_id).\
+        filter(LSP.interface_id == interface_id).\
+        all()
+    lsps = sorted(lsps, key=lambda x: x.output, reverse=True)
+
+    elements = []
+    for l in lsps:
+        L = copy(l)
+        L.img = '/{router}/lsp/{name}.png'.format(router=router,name=L.name)
+        L.comment = L.name
+        L.out = L.output
+        elements.append(L)
+
+    return render_template('list.html', elements=elements)
+
+
+@app.route('/<router>/host/<host>/lsplist')
+def plot_host_lsplist(router, host):
+    last_parse = session.query(Image).filter(Image.router == router).all()[-1]
+    last_parse_id = last_parse.id
+
+    lsps = session.query(LSP).\
+        filter(LSP.image_id == last_parse_id).\
+        filter(LSP.to == host).\
+        all()
+    lsps = sorted(lsps, key=lambda x: x.output, reverse=True)
+
+    elements = []
+    for l in lsps:
+        L = copy(l)
+        L.img = '/{router}/lsp/{name}.png'.format(router=router,name=L.name)
+        L.comment = L.name
+        L.out = L.output
+        elements.append(L)
+
+    return render_template('list.html', elements=elements)
 
 
 @app.route('/<router>/<key>')
