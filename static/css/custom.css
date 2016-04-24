@@ -1,3 +1,10 @@
+.bg-primary {
+  background-color: #2b8ef9;
+}
+
+a {
+  color: #0062CC;
+}
 .nav-tabs>li>a {
     border-radius: 0px;
 }

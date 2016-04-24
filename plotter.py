@@ -18,8 +18,8 @@ def getFigureByXY(x,y):
     ylabel='\nOutput, MBps'
     fig = Figure(figsize=(16,6), dpi=360)
     axis = fig.add_subplot(1, 1, 1)
-    axis.plot(x, y, color='#337AB7')
-    axis.fill_between(x,y, facecolor='#337AB7')
+    axis.plot(x, y, color='#2b8ef9')
+    axis.fill_between(x,y, facecolor='#2b8ef9')
     axis.grid(True)
     axis.set_ylim(bottom=0)
     axis.set_ylabel(ylabel)
