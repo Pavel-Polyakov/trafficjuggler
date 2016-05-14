@@ -81,6 +81,10 @@ class Parser(object):
             result.append(PATH)
         return result
 
+    def get_ospf_db(self):
+        rpc = self.executor.getXMLByCommand('show ospf database detail')
+        return rpc
+
     def get_interfaces_config(self):
         result = []
         command = self.executor.getXMLByCommand('show configuration interfaces')
