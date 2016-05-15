@@ -1,6 +1,14 @@
 from TrafficJuggler.models.lsp import LSP
 import re
 
+def find_bandwidth(rpc,text):
+        r = rpc.xpath('//tlv-type-name[text() = "LocIfAdr"]/following-sibling::formatted-tlv-data[1][text() = "%s"]/../tlv-type-name[text() = "MaxBW"]/following-sibling::formatted-tlv-data[1]/text()' % text)
+        return r[0] if r else None
+
+def find_router(text):
+        r = rpc.xpath('//tlv-type-name[text() = "LocIfAdr"]/following-sibling::formatted-tlv-data[1][text() = "%s"]/../../../advertising-router/text()' % text)
+        return r[0] if r else None
+
 class LSPListBuilder(object):
     def __init__(self, parser):
         self.parser = parser
@@ -11,7 +19,7 @@ class LSPListBuilder(object):
         path_fromconfig = self.parser.get_path_config()
         lsp_state_fromcli = self.parser.get_lsp_state()
         lsp_output_fromcli = self.parser.get_lsp_output()
-
+        ospf_db = self.parser.get_ospf_db()
         for lsp in lsp_fromconfig:
             # NAME
             lsp_name = lsp['name']
@@ -20,26 +28,35 @@ class LSPListBuilder(object):
             lsp_to = lsp['to']
 
             # PATH
+            path = {}
+
             path_name = lsp['pathname']
             if path_name != 'dynamic':
                 path_route = next(p['route'] for p in path_fromconfig if p['name'] == path_name)
+                path['configured'] = [x['ip'] for x in path_route]
                 if not self.__isLooseInPath__(path_route):
                     # without loose
-                    lsp_path = self.__formattedPathWithoutType__(path_route)
+                    path['real'] = [x['ip'] for x in path_route]
+                    path['type'] = 'strict'
+                    # lsp_path = self.__formattedPathWithoutType__(path_route)
                 else:
                     # with loose in the path
                     lsp_real_path_list = self.parser.get_lsp_explicit_route(lsp_name)
-                    lsp_real_path = self.__formattedPathWithoutType__(lsp_real_path_list)
-                    lsp_configured_path = self.__formattedPathWithType__(path_route)
-                    lsp_path = '{real} (configured: {conf})'.\
-                                            format(real = lsp_real_path,
-                                                   conf = lsp_configured_path)
+                    path['real'] = [x['ip'] for x in lsp_real_path_list]
+                    path['type'] = 'loose'
+                    # lsp_real_path = self.__formattedPathWithoutType__(lsp_real_path_list)
+                    # lsp_configured_path = self.__formattedPathWithType__(path_route)
+                    # lsp_path = '{real} (configured: {conf})'.\
+                    #                         format(real = lsp_real_path,
+                    #                            conf = lsp_configured_path)
             else:
                 # dynamic path
                 lsp_real_path_list = self.parser.get_lsp_explicit_route(lsp_name)
-                lsp_real_path = self.__formattedPathWithoutType__(lsp_real_path_list)
-                lsp_path = '{real} (dynamic)'.format(real = lsp_real_path)
-
+                path['real'] = [x['ip'] for x in lsp_real_path_list]
+                path['type'] = 'dynamic'
+                # lsp_real_path = self.__formattedPathWithoutType__(lsp_real_path_list)
+                # lsp_path = '{real} (dynamic)'.format(real = lsp_real_path)
+            print(path)
             # STATE
             lsp_state = lsp_state_fromcli.get(lsp_name,'Inactive')
 
@@ -62,7 +79,7 @@ class LSPListBuilder(object):
 
             lsplist.append(LSP(name = lsp_name,
                                 to = lsp_to,
-                                path = lsp_path,
+                                path = path,
                                 bandwidth = lsp_bandwidth,
                                 rbandwidth = lsp_rbandwidth,
                                 state = lsp_state,

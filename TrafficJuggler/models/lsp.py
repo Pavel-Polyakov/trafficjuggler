@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, PickleType
 from sqlalchemy.orm import relationship
 
 from TrafficJuggler.models.interface import Interface
@@ -11,7 +11,8 @@ class LSP(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     to = Column(String)
-    path = Column(String)
+    path = Column(PickleType)
+    # path = Column(String)
     bandwidth = Column(Integer)
     rbandwidth = Column(Float)
     state = Column(String)

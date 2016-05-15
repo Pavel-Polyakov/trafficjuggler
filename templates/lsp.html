@@ -44,6 +44,7 @@
   <!-- TO -->
   <td class="hidden-xs hidden-sm nowrap">to <abbr title="{{ lsp.to }}">{{ lsp.to_name }}</abbr></td>
   <!-- PATH -->
-  <td class="hidden-xs hidden-sm">{{ lsp.path }}</td>
+  <td class="hidden-xs hidden-sm">{{ lsp.path.real|join(' - ') }}</td>
+  <td class="hidden-xs hidden-sm">{{ lsp.path}}</td>
 </tr>
 {% endblock %}
