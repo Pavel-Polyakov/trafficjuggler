@@ -5,7 +5,7 @@ def find_bandwidth(rpc,text):
         r = rpc.xpath('//tlv-type-name[text() = "LocIfAdr"]/following-sibling::formatted-tlv-data[1][text() = "%s"]/../tlv-type-name[text() = "MaxBW"]/following-sibling::formatted-tlv-data[1]/text()' % text)
         return r[0] if r else None
 
-def find_router(text):
+def find_router(rpc,text):
         r = rpc.xpath('//tlv-type-name[text() = "LocIfAdr"]/following-sibling::formatted-tlv-data[1][text() = "%s"]/../../../advertising-router/text()' % text)
         return r[0] if r else None
 
@@ -33,16 +33,20 @@ class LSPListBuilder(object):
             path_name = lsp['pathname']
             if path_name != 'dynamic':
                 path_route = next(p['route'] for p in path_fromconfig if p['name'] == path_name)
-                path['configured'] = [x['ip'] for x in path_route]
+                path['configured'] = [{'ip': x['ip'],
+                                       'router': find_router(ospf_db,x['ip']),
+                                       'bandwidth': find_bandwidth(ospf_db,x['ip'])} for x in path_route]
                 if not self.__isLooseInPath__(path_route):
                     # without loose
-                    path['real'] = [x['ip'] for x in path_route]
+                    path['real'] = path['configured'][:]
                     path['type'] = 'strict'
                     # lsp_path = self.__formattedPathWithoutType__(path_route)
                 else:
                     # with loose in the path
                     lsp_real_path_list = self.parser.get_lsp_explicit_route(lsp_name)
-                    path['real'] = [x['ip'] for x in lsp_real_path_list]
+                    path['real'] = [{'ip': x['ip'],
+                                    'router': find_router(ospf_db,x['ip']),
+                                    'bandwidth': find_bandwidth(ospf_db,x['ip'])} for x in lsp_real_path_list]
                     path['type'] = 'loose'
                     # lsp_real_path = self.__formattedPathWithoutType__(lsp_real_path_list)
                     # lsp_configured_path = self.__formattedPathWithType__(path_route)
@@ -52,11 +56,13 @@ class LSPListBuilder(object):
             else:
                 # dynamic path
                 lsp_real_path_list = self.parser.get_lsp_explicit_route(lsp_name)
-                path['real'] = [x['ip'] for x in lsp_real_path_list]
+                path['real'] = [{'ip': x['ip'],
+                                'router': find_router(ospf_db,x['ip']),
+                                'bandwidth': find_bandwidth(ospf_db,x['ip'])} for x in lsp_real_path_list]
                 path['type'] = 'dynamic'
                 # lsp_real_path = self.__formattedPathWithoutType__(lsp_real_path_list)
                 # lsp_path = '{real} (dynamic)'.format(real = lsp_real_path)
-            print(path)
+
             # STATE
             lsp_state = lsp_state_fromcli.get(lsp_name,'Inactive')
 

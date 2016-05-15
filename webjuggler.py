@@ -39,9 +39,10 @@ def index():
         r['hosts'] = getHostsByImageId(last_parse_id)
         r['last_parse'] = last_parse_time
         routers.append(r)
-
+    devices = session.query(Host).all()
     return render_template('index.html',
-                           routers=routers)
+                           routers=routers,
+                           devices=devices)
 
 
 @app.route('/<router>/lsp/<key>.png')

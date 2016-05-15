@@ -42,9 +42,46 @@
   {% endif %}
   </td>
   <!-- TO -->
-  <td class="hidden-xs hidden-sm nowrap">to <abbr title="{{ lsp.to }}">{{ lsp.to_name }}</abbr></td>
+  <td class="hidden-xs hidden-sm nowrap">to <abbr title="{{ lsp.to }}">{{ devices|selectattr('ip','equalto',lsp.to)|map(attribute='name')|first }}</abbr></td>
   <!-- PATH -->
-  <td class="hidden-xs hidden-sm">{{ lsp.path.real|join(' - ') }}</td>
-  <td class="hidden-xs hidden-sm">{{ lsp.path}}</td>
+  <td class="hidden-xs hidden-sm">
+    <table >
+      <tbody>
+      <tr>
+        {% for hop in lsp.path.real %}
+          <td >
+            <!-- IP -->
+              <strong>{{ hop.ip }}</strong>
+            <br/>
+            <!-- Router -->
+            <abbr title="{{hop.router}}">{{ devices|selectattr('ip','equalto',hop.router)|map(attribute='name')|first }}</abbr>
+            <!-- Speed -->
+            <span class="badge"><small>{{hop.bandwidth|replace('Gbps','G')}}</small></span>
+
+
+
+          </td>
+
+          <!-- Arrow -->
+          <td style="margin:10px; padding:10px;">
+            {% if not loop.last %}
+              <small><span class="glyphicon glyphicon-menu-right"></span></small>
+            {% endif %}
+          </td>
+
+        {% endfor %}
+
+        <!-- LSP path type -->
+        {% if lsp.path.type != 'strict' %}
+        <td>
+          <strong class="label label-warning">{{ lsp.path.type|upper }}</strong><br/>
+          {{ lsp.path.configured|map(attribute='ip')|join(' - ')}}
+        </td>
+        {% endif %}
+    </tr>
+    </tbody>
+    </table>
+  </td>
+  <!-- ENDPATH -->
 </tr>
 {% endblock %}

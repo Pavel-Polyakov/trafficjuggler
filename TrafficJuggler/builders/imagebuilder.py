@@ -49,7 +49,7 @@ class ImageBuilder(object):
 
         for l in lsplist:
             try:
-                nh_name = [x['name'] for x in nhinterfaces if x['ip'] == l.path['real'][0]][0]
+                nh_name = [x['name'] for x in nhinterfaces if x['ip'] == l.path['real'][0]['ip']][0]
                 nh_interface = self.session.query(Interface).\
                                             filter(Interface.image_id == image.id).\
                                             filter(Interface.name == nh_name).first()
@@ -62,11 +62,10 @@ class ImageBuilder(object):
     def __getNextHopInterfaces__(self, lsplist):
         nhinterfaces = []
         routes = self.parser.get_interfaces_config()
-        for ip_nh in [x.path['real'][0] for x in lsplist]:
+        for ip_nh in [x.path['real'][0]['ip'] for x in lsplist]:
 
                 interface_name = next(r['name'] for r in routes if IPAddress(ip_nh) in IPNetwork(r['destination']))
                 nhinterfaces.append({'name': interface_name, 'ip': ip_nh})
-
         return nhinterfaces
 
     def __parseHosts__(self):
