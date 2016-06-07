@@ -184,7 +184,10 @@ def getHostsByImageId(id):
 			order_by(LSP.output.desc()).all()
 	H.sumoutput = sum([x.output for x in H.lsplist if x.output is not None])
 	H.sumbandwidth = sum([x.bandwidth for x in H.lsplist if x.bandwidth is not None])
-	H.rbandwidth = np.mean([x.rbandwidth for x in H.lsplist if x.rbandwidth is not None])
+	rbandwidth = np.mean([x.rbandwidth for x in H.lsplist if x.rbandwidth is not None])
+	if np.isnan(rbandwidth):
+	    rbandwidth = None
+	H.rbandwidth = rbandwidth
 	result.append(H)
 
     result_sorted = sorted(result, key=lambda x: x.sumoutput, reverse=True)
