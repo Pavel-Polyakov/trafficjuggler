@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect
+from flask import Flask, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import func
 from datetime import datetime, timedelta
@@ -110,7 +110,7 @@ def plot_interface_lsplist(router, interface):
     elements = []
     for l in lsps:
         L = copy(l)
-        L.img = '/{router}/lsp/{name}.png'.format(router=router, name=L.name)
+        L.img = url_for('plot_lsp',router=router,key=L.name)
         L.comment = L.name
         L.out = L.output
         elements.append(L)
@@ -132,7 +132,7 @@ def plot_host_lsplist(router, host):
     elements = []
     for l in lsps:
         L = copy(l)
-        L.img = '/{router}/lsp/{name}.png'.format(router=router, name=L.name)
+        L.img = url_for('plot_lsp',router=router,key=L.name)
         L.comment = L.name
         L.out = L.output
         elements.append(L)
@@ -160,7 +160,7 @@ def plot_list(router, key):
 
     elements = f(last_parse_id)
     for element in elements:
-        element.img = '/{router}/{key}/{val}.png'.\
+        element.img = url_for('index')+'/{router}/{key}/{val}.png'.\
             format(router=router,
                    key=re.sub('s$', '', key),
                    val=getattr(element, val_compared))

@@ -13,7 +13,7 @@
         <span class="icon-bar"></span>
       </button>
       <div class="navbar-header">
-        <a class="navbar-brand" href="/">
+	  <a class="navbar-brand" href="{{ url_for('index')}}">
           <img style="max-width:200px; margin-top: -17px; margin-left: -15px;"
                        src="static/img/tj.png">
           <!--<p>Traffic<strong class="text-default">Juggler</strong></p>-->
@@ -52,12 +52,16 @@
         <h3>{{ router['name'] }}<br><small>Обновлено: {{ router['last_parse'] }}</small></h3>
         <ul class="list-inline">
           <li>
-            <a href="/{{ router['name'] }}/interfaces">
+	  <a href="{{ url_for('plot_list',
+	      router=router['name'],
+	      key='interfaces') }}">
               <span class="glyphicon glyphicon-th-list"></span> Все интерфейсы
             </a>
           </li>
           <li>
-            <a href="/{{ router['name'] }}/lsps">
+	  <a href="{{ url_for('plot_list',
+	      router=router['name'],
+	      key='lsps') }}">
               <span class="glyphicon glyphicon-align-left"></span> Все LSP
             </a>
           </li>
@@ -72,12 +76,16 @@
         <h3>{{ router['name'] }}<br><small>Обновлено: {{ router['last_parse'] }}</small></h3>
         <ul class="list-inline">
           <li>
-            <a href="/{{ router['name'] }}/hosts">
+	  <a href="{{ url_for('plot_list',
+	      router=router['name'],
+	      key='hosts') }}">
               <span class="glyphicon glyphicon-indent-left"></span> Все хосты
             </a>
           </li>
           <li>
-            <a href="/{{ router['name'] }}/lsps">
+	  <a href="{{ url_for('plot_list',
+	      router=router['name'],
+	      key='lsps') }}">
               <span class="glyphicon glyphicon-align-left"></span> Все LSP
             </a>
           </li>

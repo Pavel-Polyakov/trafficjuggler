@@ -5,7 +5,9 @@
     <tr class="bg-primary">
       <!-- IP -->
       <th class="nowrap">
-        <small><a href="/{{ router['name'] }}/host/{{ host.ip }}/lsplist" style="color: white;" class="glyphicon glyphicon-align-left"></a></small>
+	  <small><a href="{{ url_for('plot_host_lsplist',
+		  router=router['name'],
+		  host=host.ip) }}" style="color: white;" class="glyphicon glyphicon-align-left"></a></small>
         {{ host.ip }} | {{ host.name}}
       </th>
       <!-- SUMMARY BANDWIDTH -->

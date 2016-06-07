@@ -10,7 +10,9 @@
     {% endif %}
     <!-- NAME -->
     <th class="nowrap">
-      <small><a href="/{{ router['name'] }}/interface/{{ interface.description }}/lsplist" style="color: white;" class="glyphicon glyphicon-align-left"></a></small>
+	<small><a href="{{ url_for('plot_interface_lsplist',
+		router=router['name'],
+		interface=interface.description) }}" style="color: white;" class="glyphicon glyphicon-align-left"></a></small>
        {{ interface.name }} | {{ interface.description }}
     </th>
     <!-- SPEED -->
