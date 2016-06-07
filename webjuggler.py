@@ -17,9 +17,6 @@ from plotter import getGraph
 
 
 app = Flask(__name__)
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{path}/tj.db'.\
-#                                         format(path=FULL_PATH)
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://tj:trafficjuggler@localhost/tj'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://tj:trafficjuggler@localhost/tj'
 db = SQLAlchemy(app)
 db.create_all()
@@ -37,7 +34,7 @@ def index():
 
         last_parse = session.query(Image).filter(Image.router == host).all()[-1]
         last_parse_id = last_parse.id
-        last_parse_time = setMowTime(last_parse.time)
+        last_parse_time = last_parse.time
         r['name'] = host
 	r['interfaces'] = getInterfacesByImageId(last_parse_id)
         r['hosts'] = getHostsByImageId(last_parse_id)
@@ -58,7 +55,6 @@ def plot_lsp(router, key):
             filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).\
             all()
     x = [k[1] for k in xy]
-    x = map(setMowTime, x)
     y = [k[0] for k in xy]
     y = [0 if k is None else k for k in y]
     return getGraph(x, y)
@@ -73,7 +69,6 @@ def plot_interface(router, key):
             filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).\
             all()
     x = [k[1] for k in xy]
-    x = map(setMowTime, x)
     y = [k[0] for k in xy]
     y = [0 if k is None else k for k in y]
     return getGraph(x, y)
@@ -85,7 +80,6 @@ def plot_host(router, key):
         filter(Image.router == router).\
         filter(Image.time > datetime.now() - timedelta(days=1, hours=3)).all()
     x = [k.time for k in images]
-    x = map(setMowTime, x)
     HostOutput = []
     for image in images:
         output = session.query(func.sum(LSP.output)).\
@@ -226,9 +220,6 @@ def getLSPSByImageId(id):
     lsps = sorted(lsps, key=lambda x: x.output, reverse=True)
     return lsps
 
-
-def setMowTime(x):
-    return x + timedelta(hours=3)
 
 if __name__ == '__main__':
 
