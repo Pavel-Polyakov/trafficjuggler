@@ -6,6 +6,7 @@ from copy import copy
 import logging
 import sys
 import re
+import numpy as np
 
 from config import FULL_PATH, HOSTS
 from TrafficJuggler.models.lsp import LSP
@@ -38,9 +39,7 @@ def index():
         last_parse_id = last_parse.id
         last_parse_time = setMowTime(last_parse.time)
         r['name'] = host
-        print(host)
 	r['interfaces'] = getInterfacesByImageId(last_parse_id)
-        print('interfaces')
         r['hosts'] = getHostsByImageId(last_parse_id)
         r['last_parse'] = last_parse_time
         routers.append(r)
@@ -185,24 +184,14 @@ def getHostsByImageId(id):
         distinct(LSP.to).all()
     for host in hosts:
         H = copy(host)
-        query = session.query(LSP).\
-            filter(LSP.image_id == id).\
-            filter(LSP.to == host.ip)
-        lsplist = query.cte()
-        H.lsplist = session.query(lsplist, Host.name.label('to_name')).\
-            filter(lsplist.c.to == Host.ip).\
-            order_by(lsplist.c.output.desc()).all()
-        subq_b = session.query(func.sum(lsplist.c.bandwidth).
-                               label('sumbandwidth')).subquery()
-        subq_o = session.query(func.sum(lsplist.c.output).
-                               label('sumoutput')).subquery()
-        subq_r = session.query(func.avg(lsplist.c.rbandwidth).
-                               label('rbandwidth')).subquery()
-        H.sumbandwidth, H.sumoutput, H.rbandwidth = \
-            session.query(subq_b.c.sumbandwidth,
-                          subq_o.c.sumoutput,
-                          subq_r.c.rbandwidth).first()
-        result.append(H)
+        H.lsplist = session.query(LSP).\
+			filter(LSP.image_id == id).\
+			filter(LSP.to == host.ip).\
+			order_by(LSP.output.desc()).all()
+	H.sumoutput = sum([x.output for x in H.lsplist if x.output is not None])
+	H.sumbandwidth = sum([x.bandwidth for x in H.lsplist if x.bandwidth is not None])
+	H.rbandwidth = np.mean([x.rbandwidth for x in H.lsplist if x.rbandwidth is not None])
+	result.append(H)
 
     result_sorted = sorted(result, key=lambda x: x.sumoutput, reverse=True)
     return result_sorted
@@ -214,15 +203,12 @@ def getInterfacesByImageId(id):
         filter(Interface.image_id == id).all()
     for interface in interfaces:
         I = copy(interface)
-        query = session.query(LSP).\
-            filter(LSP.image_id == id).\
-            filter(LSP.interface_id == interface.id)
-        lsplist = query.cte()
-        I.lsplist = session.query(lsplist, Host.name.label('to_name')).\
-            filter(lsplist.c.to == Host.ip).\
-            order_by(lsplist.c.output.desc()).all()
-        I.rsvpout = session.query(func.sum(lsplist.c.output)).scalar()
-        if I.output and I.rsvpout:
+        I.lsplist = session.query(LSP).\
+			filter(LSP.image_id == id).\
+			filter(LSP.interface_id == interface.id).\
+			order_by(LSP.output.desc()).all()
+	I.rsvpout = sum([x.output for x in I.lsplist if x.output is not None])
+	if I.output and I.rsvpout:
             I.ldpout = I.output - I.rsvpout
         else:
             I.ldpout = I.output
