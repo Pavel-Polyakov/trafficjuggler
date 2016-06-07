@@ -54,7 +54,8 @@
               <strong>{{ hop.ip }}</strong>
             <br/>
             <!-- Router -->
-            <abbr title="{{hop.router}}">{{ devices|selectattr('ip','equalto',hop.router)|map(attribute='name')|first }}</abbr>
+	    {% set router_ip = devices|selectattr('ip','equalto',hop.router)|map(attribute='name')|first %}
+            <a href="ssh://{{ router_ip }}" style="text-decoration: none"><abbr title="{{hop.router}}">{{ router_ip }}</abbr></a>
             <!-- Speed -->
             <span class="badge"><small>{{hop.bandwidth|replace('Gbps','G')}}</small></span>
 
