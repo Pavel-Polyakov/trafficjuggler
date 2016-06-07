@@ -8,7 +8,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from config import FULL_PATH
 
-engine = create_engine('sqlite:///{path}/tj.db'.format(path=FULL_PATH))
+# engine = create_engine('sqlite:///{path}/tj.db'.format(path=FULL_PATH))
+engine = create_engine('mysql+pymysql://tj:trafficjuggler@localhost/tj')
 Base.metadata.bind = engine
 Base.metadata.create_all(engine)
 

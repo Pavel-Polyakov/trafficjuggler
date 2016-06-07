@@ -8,7 +8,7 @@ class Image(Base):
 
     id = Column(Integer, primary_key=True)
     time = Column(DateTime(timezone=True), default=func.now())
-    router = Column(String)
+    router = Column(String(255))
 
     def __repr__(self):
         return "<Image ({router},{time})>".format(router=self.router,

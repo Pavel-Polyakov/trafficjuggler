@@ -7,8 +7,8 @@ from TrafficJuggler.models.host import Host
 class Prefix(Base):
     __tablename__ = "prefixes"
     id = Column(Integer, primary_key=True)
-    name = Column(String)
-    host_ip = Column(String)
+    name = Column(String(255))
+    host_ip = Column(String(255))
     host_id = Column(Integer, ForeignKey('hosts.id'))
     host = relationship(Host, backref='prefixes')
 

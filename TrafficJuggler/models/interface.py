@@ -8,11 +8,11 @@ class Interface(Base):
     __tablename__ = "interfaces"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String)
-    description = Column(String)
+    name = Column(String(255))
+    description = Column(String(255))
     speed = Column(Integer)
     output = Column(Integer)
-#    state = Column(String)
+#    state = Column(String(255))
     utilization = Column(Integer)
     image_id = Column(Integer, ForeignKey('images.id'))
     image = relationship(Image, backref='interfaces')

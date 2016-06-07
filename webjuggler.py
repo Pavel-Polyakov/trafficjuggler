@@ -16,9 +16,13 @@ from plotter import getGraph
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{path}/tj.db'.\
-                                        format(path=FULL_PATH)
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{path}/tj.db'.\
+#                                         format(path=FULL_PATH)
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://tj:trafficjuggler@localhost/tj'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://tj:trafficjuggler@localhost/tj'
 db = SQLAlchemy(app)
+db.create_all()
+
 session = db.session
 
 logging.basicConfig(stream=sys.stderr)
@@ -33,9 +37,10 @@ def index():
         last_parse = session.query(Image).filter(Image.router == host).all()[-1]
         last_parse_id = last_parse.id
         last_parse_time = setMowTime(last_parse.time)
-
         r['name'] = host
-        r['interfaces'] = getInterfacesByImageId(last_parse_id)
+        print(host)
+	r['interfaces'] = getInterfacesByImageId(last_parse_id)
+        print('interfaces')
         r['hosts'] = getHostsByImageId(last_parse_id)
         r['last_parse'] = last_parse_time
         routers.append(r)

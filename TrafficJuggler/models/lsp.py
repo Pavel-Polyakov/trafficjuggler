@@ -9,13 +9,13 @@ class LSP(Base):
     __tablename__ = "lsps"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String)
-    to = Column(String)
+    name = Column(String(255))
+    to = Column(String(255))
     path = Column(PickleType)
-    # path = Column(String)
+    # path = Column(String(255))
     bandwidth = Column(Integer)
     rbandwidth = Column(Float)
-    state = Column(String)
+    state = Column(String(255))
     output = Column(Integer)
     interface_id = Column(Integer, ForeignKey('interfaces.id'))
     interface = relationship(Interface, backref="lsps")

@@ -82,7 +82,7 @@ class ImageBuilder(object):
         prefixbuilder = PrefixBuilder(self.parser)
         prefixes = prefixbuilder.create()
         for p in prefixes:
-            if not self.session.query("'"+p.name+"'").filter(Prefix.name==p.name).first():
+        #    if not self.session.query("'"+p.name+"'").filter(Prefix.name==p.name).first():
                 host = self.session.query(Host).filter(Host.ip == p.host_ip).first();
                 p.host_id = host.id
                 self.session.add(p)
