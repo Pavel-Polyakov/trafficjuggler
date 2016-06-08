@@ -160,7 +160,7 @@ def plot_list(router, key):
 
     elements = f(last_parse_id)
     for element in elements:
-        element.img = url_for('index')+'/{router}/{key}/{val}.png'.\
+        element.img = '/{router}/{key}/{val}.png'.\
             format(router=router,
                    key=re.sub('s$', '', key),
                    val=getattr(element, val_compared))
