@@ -18,14 +18,14 @@ def getGraph(x,y):
 
 def getFigureByXY(x,y):
     ylabel='\nOutput, MBps'
-    fig = Figure(figsize=(16,6), dpi=360)
+    fig = Figure(figsize=(16,6), dpi=120)
     axis = fig.add_subplot(1, 1, 1)
     axis.plot(x, y, color='#2b8ef9')
     axis.fill_between(x,y, facecolor='#2b8ef9')
     axis.grid(True)
     axis.set_ylim(bottom=0)
     axis.set_ylabel(ylabel)
-#    axis.set_xlabel('\n%s - %s' % (x[0],x[-1]))
+    # axis.set_xlabel('\n%s - %s' % (x[0],x[-1]))
     axis.xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
     axis.xaxis.set_major_locator(dates.HourLocator(byhour=range(0,24,1)))
     fig.autofmt_xdate()
