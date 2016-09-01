@@ -6,10 +6,10 @@ from TrafficJuggler.models.lsp import LSP
 from TrafficJuggler.models.prefix import Prefix
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-from config import FULL_PATH
+from config import FULL_PATH, DB_STRING
 
 # engine = create_engine('sqlite:///{path}/tj.db'.format(path=FULL_PATH))
-engine = create_engine('mysql+pymysql://tj:trafficjuggler@localhost/tj')
+engine = create_engine(DB_STRING)
 Base.metadata.bind = engine
 Base.metadata.create_all(engine)
 

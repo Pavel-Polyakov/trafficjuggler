@@ -8,7 +8,7 @@ import sys
 import re
 import numpy as np
 
-from config import FULL_PATH, HOSTS
+from config import FULL_PATH, HOSTS, DB_STRING_ALCHEMY
 from TrafficJuggler.models.lsp import LSP
 from TrafficJuggler.models.interface import Interface
 from TrafficJuggler.models.host import Host
@@ -17,7 +17,7 @@ from plotter import getGraph
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://tj:trafficjuggler@localhost/tj'
+app.config['SQLALCHEMY_DATABASE_URI'] = DB_STRING_ALCHEMY
 db = SQLAlchemy(app)
 db.create_all()
 
@@ -36,7 +36,7 @@ def index():
         last_parse_id = last_parse.id
         last_parse_time = last_parse.time
         r['name'] = host
-	r['interfaces'] = getInterfacesByImageId(last_parse_id)
+	    r['interfaces'] = getInterfacesByImageId(last_parse_id)
         r['hosts'] = getHostsByImageId(last_parse_id)
         r['last_parse'] = last_parse_time
         routers.append(r)
@@ -225,7 +225,6 @@ def getLSPSByImageId(id):
 
 
 if __name__ == '__main__':
-
     app.run(
         host="0.0.0.0",
         debug=True
